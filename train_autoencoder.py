@@ -7,7 +7,7 @@ import torch.nn as nn
 
 data = np.load('./AF4025.npz')
 signal_data = data['signal']
-length = 1985
+length = 513
 signal_data = (signal_data[:-(signal_data.shape[0] % length)] /
                data['norm_factor']) \
               .astype(np.float32) \
@@ -31,7 +31,7 @@ class Autoencoder(torch.nn.Module):
                 in_channels=1,
                 out_channels=64,
                 kernel_size=129,
-                stride=64,
+                stride=32,
                 dilation=1, groups=1, bias=True
             ),
             torch.nn.ELU(),
@@ -39,7 +39,7 @@ class Autoencoder(torch.nn.Module):
             torch.nn.Conv1d(
                 in_channels=64,
                 out_channels=128,
-                kernel_size=5,
+                kernel_size=7,
                 stride=1,
                 dilation=1, groups=1, bias=True
             ),
@@ -48,7 +48,7 @@ class Autoencoder(torch.nn.Module):
             torch.nn.Conv1d(
                 in_channels=128,
                 out_channels=256,
-                kernel_size=3,
+                kernel_size=5,
                 stride=1,
                 dilation=1, groups=1, bias=True
             ),
@@ -76,7 +76,7 @@ class Autoencoder(torch.nn.Module):
             torch.nn.ConvTranspose1d(
                 in_channels=256,
                 out_channels=128,
-                kernel_size=3,
+                kernel_size=5,
                 stride=1,
                 dilation=1, groups=1, bias=True
             ),
@@ -84,7 +84,7 @@ class Autoencoder(torch.nn.Module):
             torch.nn.ConvTranspose1d(
                 in_channels=128,
                 out_channels=64,
-                kernel_size=5,
+                kernel_size=7,
                 stride=1,
                 dilation=1, groups=1, bias=True
             ),
@@ -93,7 +93,7 @@ class Autoencoder(torch.nn.Module):
                 in_channels=64,
                 out_channels=1,
                 kernel_size=129,
-                stride=64,
+                stride=32,
                 dilation=1, groups=1, bias=True
             )
         )
@@ -119,6 +119,7 @@ print("Batch count:", batch_count)
 best_loss = np.inf
 for epoch in range(50):
     running_loss = 0.0
+
     model.train()
     for i in range(batch_count):
         # get the inputs
