@@ -1,165 +1,155 @@
-
-# coding: utf-8
-
-# In[1]:
-
-
-import matplotlib.pyplot as plt
-import matplotlib
-get_ipython().run_line_magic('matplotlib', 'inline')
 import numpy as np
-
-
-# In[2]:
-
+import torch
+import torch.optim as optim
+import math
+import torch.nn.functional as F
+import torch.nn as nn
 
 data = np.load('./AF4025.npz')
-
-
-# In[3]:
-
-
 signal_data = data['signal']
 length = 1985
-signal_data = signal_data[:-(signal_data.shape[0] % length)] / data['norm_factor']
+signal_data = (signal_data[:-(signal_data.shape[0] % length)] /
+               data['norm_factor']) \
+              .astype(np.float32) \
+              .reshape((-1, length))
+np.random.shuffle(signal_data)
+
+validation_count = int(math.ceil(signal_data.shape[0] * 0.2))
+
+signal_data_train, signal_data_valid = (signal_data[:-validation_count],
+                                        signal_data[-validation_count:])
+print(validation_count)
+print(signal_data_train.shape)
+signal_data_batched = signal_data_train
 
 
-# In[16]:
+class Autoencoder(torch.nn.Module):
+    def __init__(self):
+        super(Autoencoder, self).__init__()
+        self.encode = torch.nn.Sequential(
+            torch.nn.Conv1d(
+                in_channels=1,
+                out_channels=64,
+                kernel_size=129,
+                stride=64,
+                dilation=1, groups=1, bias=True
+            ),
+            torch.nn.ELU(),
+            nn.Dropout(0.5),
+            torch.nn.Conv1d(
+                in_channels=64,
+                out_channels=128,
+                kernel_size=5,
+                stride=1,
+                dilation=1, groups=1, bias=True
+            ),
+            torch.nn.ELU(),
+            nn.Dropout(0.5),
+            torch.nn.Conv1d(
+                in_channels=128,
+                out_channels=256,
+                kernel_size=3,
+                stride=1,
+                dilation=1, groups=1, bias=True
+            ),
+            torch.nn.ELU(),
+            nn.Dropout(0.5),
+            torch.nn.Conv1d(
+                in_channels=256,
+                out_channels=512,
+                kernel_size=3,
+                stride=1,
+                dilation=1, groups=1, bias=True
+            )
+
+        )
+
+        self.decode = torch.nn.Sequential(
+            torch.nn.ConvTranspose1d(
+                in_channels=512,
+                out_channels=256,
+                kernel_size=3,
+                stride=1,
+                dilation=1, groups=1, bias=True
+            ),
+            torch.nn.ELU(),
+            torch.nn.ConvTranspose1d(
+                in_channels=256,
+                out_channels=128,
+                kernel_size=3,
+                stride=1,
+                dilation=1, groups=1, bias=True
+            ),
+            torch.nn.ELU(),
+            torch.nn.ConvTranspose1d(
+                in_channels=128,
+                out_channels=64,
+                kernel_size=5,
+                stride=1,
+                dilation=1, groups=1, bias=True
+            ),
+            torch.nn.ELU(),
+            torch.nn.ConvTranspose1d(
+                in_channels=64,
+                out_channels=1,
+                kernel_size=129,
+                stride=64,
+                dilation=1, groups=1, bias=True
+            )
+        )
+
+    def forward(self, input):
+        # print(input.size())
+        encoding = self.encode(input)
+        # print(encoding.size())
+        output = self.decode(F.elu(encoding))
+        # print(output.size())
+        loss = torch.mean((output - input)**2)
+        return loss
 
 
-signal_data_batched = signal_data.reshape((-1, length)).astype(np.float32)
-np.random.shuffle(signal_data_batched)
+valid_data = torch.from_numpy(signal_data_valid).cuda()[:, None, :]
 
+model = Autoencoder().cuda()
+optimizer = optim.Adam(model.parameters(), lr=3e-4)
 
-# In[5]:
-
-
-signal_data_batched.shape
-
-
-# In[6]:
-
-
-plt.figure(figsize=(17,4))
-plt.plot(np.arange(length), signal_data_batched[2000])
-
-
-# In[7]:
-
-
-import torch
-
-
-# In[8]:
-
-
-data = torch.from_numpy(signal_data_batched[30:40, None, :].astype(np.float32))
-
-
-# In[9]:
-
-
-encode = torch.nn.Sequential(
-    torch.nn.Conv1d(
-        in_channels=1,
-        out_channels=64,
-        kernel_size=257,
-        stride=64,
-        dilation=1, groups=1, bias=True
-    ),
-    torch.nn.ELU(),
-    torch.nn.Conv1d(
-        in_channels=64,
-        out_channels=128,
-        kernel_size=5,
-        stride=1,
-        dilation=1, groups=1, bias=True
-    ),
-    torch.nn.ELU(),
-    torch.nn.Conv1d(
-        in_channels=128,
-        out_channels=256,
-        kernel_size=5,
-        stride=1,
-        dilation=2, groups=1, bias=True
-    )
-)
-
-
-# In[10]:
-
-
-conved_0 = encode(data).detach().numpy()[0]
-plt.imshow(conved_0, interpolation="None")
-conved_0.shape
-
-
-# In[11]:
-
-
-decode = torch.nn.Sequential(
-    torch.nn.ConvTranspose1d(
-        in_channels=256,
-        out_channels=128,
-        kernel_size=5,
-        stride=1,
-        dilation=2, groups=1, bias=True
-    ),
-    torch.nn.ELU(),
-    torch.nn.ConvTranspose1d(
-        in_channels=128,
-        out_channels=64,
-        kernel_size=5,
-        stride=1,
-        dilation=1, groups=1, bias=True
-    ),
-    torch.nn.ELU(),
-    torch.nn.ConvTranspose1d(
-        in_channels=64,
-        out_channels=1,
-        kernel_size=257,
-        stride=64,
-        dilation=1, groups=1, bias=True
-    )
-)
-
-
-# In[15]:
-
-
-conved_0 = decode(encode(data)).detach().numpy()[0]
-plt.imshow(conved_0, interpolation="None")
-conved_0.shape
-
-
-# In[20]:
-
-
-import torch.optim as optim
-optimizer = optim.Adam(
-    list(decode.parameters()) + list(encode.parameters()), lr=3e-4)
-
-batch_size = 10
+batch_size = 16
 batch_count = signal_data_batched.shape[0] // batch_size
-for epoch in range(1):
+print("Batch count:", batch_count)
+best_loss = np.inf
+for epoch in range(50):
     running_loss = 0.0
+    model.train()
     for i in range(batch_count):
         # get the inputs
-        data = signal_data_batched[i * batch_size:(i + 1) * batch_size, None, :]
-        input = torch.from_numpy(data.astype(np.float32))
+        data = signal_data_batched[i * batch_size:
+                                   (i + 1) * batch_size, None, :]
+        input = torch.from_numpy(data.astype(np.float32)).cuda()
         # zero the parameter gradients
         optimizer.zero_grad()
 
         # forward + backward + optimize
-        output = decode(encode(input))
-        loss = torch.mean(torch.sum((output - input)**2, dim=1))
+        loss = model(input)
+        # print(loss)
         loss.backward()
         optimizer.step()
 
         # print statistics
         running_loss += loss.item()
-        if i % 2000 == 1999:    # print every 2000 mini-batches
+        if (i + 1) % 500 == 0:    # print every 500 mini-batches
             print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, running_loss / 2000))
+                  (epoch + 1, i + 1, running_loss / 500))
             running_loss = 0.0
 
+    model.eval()
+    with torch.no_grad():
+        valid_loss = model(valid_data)
+        if valid_loss < best_loss:
+            print("Best valid loss:", valid_loss)
+            with open('model.pt', 'wb') as f:
+                torch.save(model, f)
+            best_loss = valid_loss
+        else:
+            print("Valid loss:", valid_loss)
+
+    np.random.shuffle(signal_data_batched)
