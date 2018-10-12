@@ -35,7 +35,6 @@ class Autoencoder(torch.nn.Module):
                 dilation=1, groups=1, bias=True
             ),
             torch.nn.ELU(),
-            nn.Dropout(0.5),
             torch.nn.Conv1d(
                 in_channels=64,
                 out_channels=128,
@@ -44,7 +43,6 @@ class Autoencoder(torch.nn.Module):
                 dilation=1, groups=1, bias=True
             ),
             torch.nn.ELU(),
-            nn.Dropout(0.5),
             torch.nn.Conv1d(
                 in_channels=128,
                 out_channels=256,
@@ -53,18 +51,40 @@ class Autoencoder(torch.nn.Module):
                 dilation=1, groups=1, bias=True
             ),
             torch.nn.ELU(),
-            nn.Dropout(0.5),
             torch.nn.Conv1d(
                 in_channels=256,
                 out_channels=512,
                 kernel_size=3,
                 stride=1,
                 dilation=1, groups=1, bias=True
+            ),
+            torch.nn.ELU(),
+            torch.nn.Conv1d(
+                in_channels=512,
+                out_channels=128,
+                kernel_size=1, stride=1, dilation=1, groups=1, bias=True
+            ),
+            torch.nn.ELU(),
+            torch.nn.Conv1d(
+                in_channels=128,
+                out_channels=2,
+                kernel_size=1, stride=1, dilation=1, groups=1, bias=True
             )
-
         )
 
         self.decode = torch.nn.Sequential(
+            torch.nn.Conv1d(
+                in_channels=2,
+                out_channels=128,
+                kernel_size=1, stride=1, dilation=1, groups=1, bias=True
+            ),
+            torch.nn.ELU(),
+            torch.nn.Conv1d(
+                in_channels=128,
+                out_channels=512,
+                kernel_size=1, stride=1, dilation=1, groups=1, bias=True
+            ),
+            torch.nn.ELU(),
             torch.nn.ConvTranspose1d(
                 in_channels=512,
                 out_channels=256,
