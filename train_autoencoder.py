@@ -3,7 +3,7 @@ import torch
 import torch.optim as optim
 import math
 import torch.nn.functional as F
-import torch.nn as nn
+# import torch.nn as nn
 
 data = np.load('./AF4025.npz')
 signal_data = data['signal']
@@ -131,9 +131,9 @@ class Autoencoder(torch.nn.Module):
 valid_data = torch.from_numpy(signal_data_valid).cuda()[:, None, :]
 
 model = Autoencoder().cuda()
-optimizer = optim.Adam(model.parameters(), lr=3e-4)
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
-batch_size = 16
+batch_size = 64
 batch_count = signal_data_batched.shape[0] // batch_size
 print("Batch count:", batch_count)
 best_loss = np.inf
