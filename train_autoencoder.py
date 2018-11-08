@@ -21,6 +21,7 @@ signal_data_train, signal_data_valid = (signal_data[:-validation_count],
 print(validation_count)
 print(signal_data_train.shape)
 signal_data_batched = signal_data_train
+bottleneck_size = 64
 
 
 class Autoencoder(torch.nn.Module):
@@ -67,14 +68,14 @@ class Autoencoder(torch.nn.Module):
             torch.nn.ELU(),
             torch.nn.Conv1d(
                 in_channels=128,
-                out_channels=2,
+                out_channels=bottleneck_size,
                 kernel_size=1, stride=1, dilation=1, groups=1, bias=True
             )
         )
 
         self.decode = torch.nn.Sequential(
             torch.nn.Conv1d(
-                in_channels=2,
+                in_channels=bottleneck_size,
                 out_channels=128,
                 kernel_size=1, stride=1, dilation=1, groups=1, bias=True
             ),
