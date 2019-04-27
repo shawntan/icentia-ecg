@@ -10,8 +10,9 @@ no_of_chunks = 50
 
 if __name__ == "__main__":
     in_filename = sys.argv[1]
-    out_filename = sys.argv[2]
-    out_annotationfile = sys.argv[3]
+    filename = in_filename.split('.')[0]
+    out_filename = filename + "_batched.npz"
+    out_annotationfile = filename + "_batched_lbls.npz"
 
     data = np.load(in_filename)
 
@@ -41,5 +42,5 @@ if __name__ == "__main__":
             points = btype_idxs[btype][(start <=  btype_idxs[btype]) & (btype_idxs[btype] < end)]
             chunk_btype_idxs.append(points)
         annotations.append(chunk_btype_idxs)
-    np.save(out_filename, selected_array)
-    np.save(out_annotationfile, annotations)
+    np.savez(out_filename, selected_array)
+    np.savez(out_annotationfile, annotations)
