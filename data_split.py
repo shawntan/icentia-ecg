@@ -27,7 +27,7 @@ if __name__ == "__main__":
     chunks = length // chunk_length
     signal = signal[:chunks * chunk_length]
 
-    selected_chunks = np.random.choice(chunks, no_of_chunks, replace=False)
+    selected_chunks = np.random.choice(chunks, min(chunks, no_of_chunks), replace=False)
     selected_chunks.sort()
 
     batched_signal = signal.reshape(chunks, chunk_length)
