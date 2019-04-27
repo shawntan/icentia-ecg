@@ -41,6 +41,5 @@ if __name__ == "__main__":
             points = btype_idxs[btype][(start <=  btype_idxs[btype]) & (btype_idxs[btype] < end)]
             chunk_btype_idxs.append(points)
         annotations.append(chunk_btype_idxs)
-
     np.save(out_filename, selected_array)
     np.save(out_annotationfile, annotations)
