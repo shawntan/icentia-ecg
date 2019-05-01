@@ -2,7 +2,7 @@
 # coding: utf-8
 
 import numpy as np
-import sys
+import sys, os
 
 
 chunk_length = 10**6
@@ -14,6 +14,10 @@ if __name__ == "__main__":
     out_filename = filename + "_batched.npz"
     out_annotationfile = filename + "_batched_lbls.npz"
 
+    if os.path.isfile(out_filename):
+        print("File exists ", out_filename)
+        sys.exit()
+    
     data = np.load(in_filename)
 
     signal = (data['signal'].astype(np.float32) /
