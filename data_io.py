@@ -5,7 +5,7 @@ import random
 
 
 def load_file(filename):
-    print(">", filename)
+    # print(">", filename)
     data = np.load(filename)
     data = data['arr_0']
     return data
@@ -43,7 +43,6 @@ def stream_file_list(filenames, buffer_count=100, batch_size=10):
     streams = []
     while len(streams) < buffer_count and len(filenames) > 0:
         streams.append(stream_array(load_file(filenames.pop())))
-    print("Start dumping")
     while len(streams) > 0 or len(filenames) > 0:
         i = 0
         while i < len(streams) and len(result) < batch_size:
