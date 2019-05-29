@@ -7,7 +7,7 @@ import gzip
 import pickle
 
 np.random.seed(1337)
-chunk_length = 10**6
+chunk_length = 2**20 + 1
 no_of_chunks = 50
 
 if __name__ == "__main__":

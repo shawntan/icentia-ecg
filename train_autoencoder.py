@@ -10,7 +10,9 @@ import data_io
 report_every = 20
 
 def data_stream(filenames, shuffle=True):
-    return data_io.stream_file_list(filenames, buffer_count=25, batch_size=5,
+    return data_io.stream_file_list(filenames,
+                                    buffer_count=25,
+                                    batch_size=5,
                                     shuffle=shuffle)
 
 
