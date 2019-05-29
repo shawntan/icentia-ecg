@@ -12,8 +12,9 @@ no_of_chunks = 50
 
 if __name__ == "__main__":
     in_filename = sys.argv[1]
-    out_prefix = sys.argv[2]
-    filename = out_prefix
+    out_directory = sys.argv[2]
+    file_id = in_filename.split('/')[-1].split('.')[0]
+    filename = out_directory + '/' + file_id
     out_filename = filename + "_batched.pkl.gz"
     out_annotationfile = filename + "_batched_lbls.pkl.gz"
 
