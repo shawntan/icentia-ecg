@@ -51,7 +51,6 @@ if __name__ == "__main__":
             chunk_btype_idxs.append(points)
         annotations.append(chunk_btype_idxs)
 
-    np.savez_compressed(out_prefix + ".npz", selected_array)
     with gzip.open(out_filename, 'wb', compresslevel=9) as f:
         pickle.dump(selected_array, f, 2)
 
