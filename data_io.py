@@ -10,8 +10,9 @@ def load_file(filename):
     data = data['arr_0']
     return data
 
-def stream_array(data, chunk_size=5):
-    np.random.shuffle(data)
+def stream_array(data, chunk_size=5, shuffle=True):
+    if shuffle:
+        np.random.shuffle(data)
     samples = (data.shape[0] // chunk_size) * chunk_size
     data = data[:samples]
     data = data.reshape(-1, chunk_size, data.shape[1])
@@ -38,11 +39,15 @@ def buffered_random(stream, buffer_items=100, leak_percent=0.9):
             yield item
 
 
-def stream_file_list(filenames, buffer_count=100, batch_size=10):
+def stream_file_list(filenames, buffer_count=100, batch_size=10,
+                     shuffle=True):
+    if shuffle:
+        random.shuffle(filenames)
     result = []
     streams = []
     while len(streams) < buffer_count and len(filenames) > 0:
-        streams.append(stream_array(load_file(filenames.pop())))
+        streams.append(stream_array(load_file(filenames.pop()),
+                                    shuffle=shuffle))
     while len(streams) > 0 or len(filenames) > 0:
         i = 0
         while i < len(streams) and len(result) < batch_size:
@@ -51,14 +56,20 @@ def stream_file_list(filenames, buffer_count=100, batch_size=10):
                 i = (i + 1) % len(streams)
                 result.append(next_item)
             except StopIteration:
-                if len(filenames) > 0:
-                    streams[i] = stream_array(load_file(filenames.pop()))
-                else:
+                stream = None
+                while len(filenames) > 0:
+                    try:
+                        stream = stream_array(load_file(filenames.pop()),
+                                                  shuffle=shuffle)
+                    except:
+                        pass
+                if stream is None:
                     streams = streams[:i] + streams[i+1:]
         if len(result) > 0:
             yield np.stack(result)
             result = []
-        random.shuffle(streams)
+        if shuffle:
+            random.shuffle(streams)
 
 
 if __name__ == "__main__":

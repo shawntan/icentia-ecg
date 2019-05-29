@@ -3,16 +3,19 @@
 
 import numpy as np
 import sys, os
+import gzip
+import pickle
 
-
+np.random.seed(1337)
 chunk_length = 10**6
 no_of_chunks = 50
 
 if __name__ == "__main__":
     in_filename = sys.argv[1]
-    filename = in_filename.split('.')[0]
-    out_filename = filename + "_batched.npz"
-    out_annotationfile = filename + "_batched_lbls.npz"
+    out_prefix = sys.argv[2]
+    filename = out_prefix
+    out_filename = filename + "_batched.pkl.gz"
+    out_annotationfile = filename + "_batched_lbls.pkl.gz"
 
     if os.path.isfile(out_filename):
         print("File exists ", out_filename)
@@ -42,8 +45,16 @@ if __name__ == "__main__":
         for btype in range(5):
             start = s_idx * chunk_length
             end = start + chunk_length
-            points = btype_idxs[btype][(start <=  btype_idxs[btype]) & (btype_idxs[btype] < end)]
+            points = (btype_idxs[btype][(start <=  btype_idxs[btype]) &
+                                        (btype_idxs[btype] < end)] -
+                      start)
             chunk_btype_idxs.append(points)
         annotations.append(chunk_btype_idxs)
-    np.savez(out_filename, selected_array)
-    np.savez(out_annotationfile, annotations)
+
+    np.savez_compressed(out_prefix + ".npz", selected_array)
+    with gzip.open(out_filename, 'wb', compresslevel=9) as f:
+        pickle.dump(selected_array, f, 2)
+
+    with gzip.open(out_annotationfile, 'wb', compresslevel=9) as f:
+        pickle.dump(annotations, f, 2)
+
