@@ -21,6 +21,7 @@ if __name__ == "__main__":
     if os.path.isfile(out_filename):
         print("File exists ", out_filename)
         sys.exit()
+    print("Processing: ", out_filename)
     data = np.load(in_filename)
 
     signal = (data['signal'].astype(np.float32) /
