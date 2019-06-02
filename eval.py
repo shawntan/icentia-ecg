@@ -33,19 +33,19 @@ create_index(labels)
 # order by labels
 data = data.loc[labels.index]
 
-print("Loaded data")
+print("Loaded data", data.shape)
 
-def evaluate(embeddings, labels, num_train_examples, num_trials):
+def evaluate(embeddings, labels, num_train_examples, num_test_examples, num_trials):
     
     all_acc = []
     for i in range(num_trials):
         X, X_test, y, y_test = \
-            sklearn.model_selection.train_test_split(data, labels, 
+            sklearn.model_selection.train_test_split(embeddings, labels, 
                                                      train_size=num_train_examples, 
-                                                     test_size=len(data)-num_train_examples, 
+                                                     test_size=num_test_examples, 
                                                      stratify=labels,
                                                      random_state=i)
-
+        print("X", X.shape, "X_test", X_test.shape)
         model = sklearn.neighbors.KNeighborsClassifier(n_neighbors=1)
         model = model.fit(X, y.values.flatten())
 
@@ -56,7 +56,7 @@ def evaluate(embeddings, labels, num_train_examples, num_trials):
 
     return np.asarray(all_acc).mean(), np.asarray(all_acc).std()
     
-mean,stdev = evaluate(data, labels, args.num_train_examples, args.num_trials)
+mean,stdev = evaluate(data, labels, args.num_train_examples, min(3000,len(data)-args.num_train_examples), args.num_trials)
 
 print("Accuracy:",round(mean,3), "+-", round(stdev,3), "num_trials:",args.num_trials) 
 
