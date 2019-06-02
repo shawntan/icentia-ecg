@@ -18,8 +18,8 @@ if __name__ == "__main__":
     out_filename = filename + "_batched.pkl.gz"
     out_annotationfile = filename + "_batched_lbls.pkl.gz"
 
-    if os.path.isfile(out_filename):
-        print("File exists ", out_filename)
+    if os.path.isfile(out_filename) and os.path.isfile(out_annotationfile):
+        print("Both files exist already. Exiting.", out_filename)
         sys.exit()
     print("Processing: ", out_filename)
     data = np.load(in_filename)
