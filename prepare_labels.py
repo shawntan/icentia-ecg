@@ -1,5 +1,5 @@
 import numpy as np
-import sys,os
+0;276;0cimport sys,os
 import pickle, gzip
 import pandas as pd
 
@@ -13,11 +13,18 @@ max_idx_per_label = 20
 
 test_labels = []
 for i in range(10001, 12971): # range of text examples
-    filename = "/home/cohenjos/projects/rpp-bengioy/jpcohen/icentia12k/" + str(i) + "_batched_lbls.pkl.gz"
+    filename = sys.argv[1] + "/" + str(i) + "_batched_lbls.pkl.gz"
     print(filename)
+    if (not os.path.isfile(filename)):
+        print("##### File missing")
+        continue
     labels = pickle.load(gzip.open(filename))
+    if len(labels)) != num_segments:
+        print("##### seems like an error")
+        continue
     for segment in range(num_segments):
         for label in range(num_labels):
+            #print(len(labels[segment]))
             idx_toselect = labels[segment][label]
             
             # filter below 1/2 frame
@@ -28,7 +35,7 @@ for i in range(10001, 12971): # range of text examples
             
             # keep number of samples per label to less than 20
             if len(idx_toselect) > max_idx_per_label:
-                idx_toselect = np.random.choice(labels[0][0], max_idx_per_label, replace=False)
+                idx_toselect = np.random.choice(idx_toselect, max_idx_per_label, replace=False)
             
             for idx in idx_toselect:
                 test_label = [i, segment, idx, label]
