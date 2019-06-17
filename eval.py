@@ -31,6 +31,10 @@ create_index(data)
 create_index(labels)
 
 # order by labels
+if len(labels.index) != len(data.index):
+    print(" !! Issue with coverage of labels. The data must align to the labels.")
+    sys.exit()
+
 data = data.loc[labels.index]
 
 print("Loaded data", data.shape)
