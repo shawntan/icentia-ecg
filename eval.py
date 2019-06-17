@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('embeddings_file', help='File with embeddings')
 parser.add_argument('num_train_examples', nargs='?', type=int, default=1000, help='')
 parser.add_argument('num_trials', nargs='?', type=int, default=10, help='')
-parser.add_argument('labels_file', nargs='?', default="test_labels.csv", help='')
+parser.add_argument('labels_file', nargs='?', default="test_labels.csv.zip", help='')
 args = parser.parse_args()
 
 print(args)
