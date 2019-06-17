@@ -1,10 +1,11 @@
+#!/usr/bin/env python3
 import numpy as np
 import sys,os
 import pickle, gzip
 import pandas as pd
 
 
-test_labels = pd.read_csv("test_labels.csv")
+test_labels = pd.read_csv("test_labels.csv.zip")
 test_labels.set_index("id", inplace=True)
 
 frame_length = 2**11+1
@@ -28,7 +29,7 @@ for index, row in test_labels.iterrows():
     
     emb = np.copy(input_seq) # baseline
     
-    results.append([row["sample"],row["segment"],row["frame"],*emb])
+    results.append([row["sample"],row["segment"],row["frame"],*emb.astype("float32")])
     
 print("Creating dataframe")
 results_df = pd.DataFrame(results, columns=["sample", "segment", "frame", *[""]*(len(results[0])-3)])
