@@ -2,7 +2,7 @@ import numpy as np
 import sys,os
 import pickle, gzip
 import pandas as pd
-
+from tqdm import tqdm
 
 def create_index(df):
     # create index col and remove source columns
@@ -12,10 +12,10 @@ def create_index(df):
 #     del df["frame"]
     df.set_index("id", inplace=True)
 
-data = pd.read_csv("test_emb_head.csv.zip")
+data = pd.read_csv(sys.argv[1])
 create_index(data)
 
-nsamples = 4
+nsamples = 100
 print("Taking subset to train PCA nsamples=", nsamples)
 subset = np.random.choice(range(len(data)), nsamples, replace=False)
 data_subset = data.iloc[subset]
@@ -28,8 +28,7 @@ pca.fit(data_subset.values[:,4:])
 
 results = []
 
-for i, row in data.iterrows():
-    print(".")
+for i, row in tqdm(data.iterrows()):
     
     toemb = row.values[4:]
     iemb = pca.transform([toemb])
