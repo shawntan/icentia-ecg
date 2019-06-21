@@ -3,6 +3,7 @@ import numpy as np
 import sys,os
 import pickle, gzip
 import pandas as pd
+import gc, gzip
 
 
 test_labels = pd.read_csv("test_labels.csv.zip")
@@ -12,6 +13,10 @@ frame_length = 2**11+1
 filename = ""
 labels = None
 results = []
+
+#f= open("test_emb.csv","w+")
+f= gzip.open('test_emb.csv.gz', 'wt')
+f.write("sample, segment, frame," + ",".join(map(str, range(frame_length))) + " \n")
 
 for index, row in test_labels.iterrows():
     new_filename = sys.argv[1] + "/" + str(row["sample"]) + "_batched.pkl.gz"
@@ -29,12 +34,12 @@ for index, row in test_labels.iterrows():
     
     emb = np.copy(input_seq) # baseline
     
-    results.append([row["sample"],row["segment"],row["frame"],*emb.astype("float32")])
+    f.write(str(row["sample"]) + "," + 
+            str(row["segment"]) + "," + 
+            str(row["frame"]) + "," +
+            ','.join(emb.astype("float32").astype("str")) + 
+            "\n")
     
-print("Creating dataframe")
-results_df = pd.DataFrame(results, columns=["sample", "segment", "frame", *[""]*(len(results[0])-3)])
-results_df.index.name = "id"
-
-print("Writing CSV")
-results_df.to_csv("test_emb.csv.gz")
-
+    gc.collect()
+    
+f.close()
