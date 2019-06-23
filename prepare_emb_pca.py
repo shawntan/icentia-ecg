@@ -64,7 +64,7 @@ with gzip.open(args.embeddings_file, 'rb') as f:
         for i, line in tqdm(enumerate(f)):
             row = line.decode('ascii').replace("\n","").split(",")
             
-            toemb = np.asarray(row[4:],dtype="float32")
+            toemb = np.asarray(row[3:],dtype="float32")
             iemb = pca.transform([toemb])
             
             ft.write(str(row[0]) + "," + 
