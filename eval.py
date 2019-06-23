@@ -9,7 +9,8 @@ import gzip
 
 parser = argparse.ArgumentParser()
 parser.add_argument('embeddings_file', help='File with embeddings')
-parser.add_argument('num_train_examples', nargs='?', type=int, default=1000, help='')
+parser.add_argument('num_train_examples', nargs='?', type=int, default=5000, help='')
+parser.add_argument('num_test_examples', nargs='?', type=int, default=5000, help='')
 parser.add_argument('num_trials', nargs='?', type=int, default=10, help='')
 parser.add_argument('labels_file', nargs='?', default="test_labels.csv.gz", help='')
 args = parser.parse_args()
@@ -18,7 +19,7 @@ print(args)
 
 def create_index(df):
     # create index col and remove source columns
-    df["id"] = df.apply(lambda row: str(int(row[0])) + "_" + str(int(row[1])) + "_" + str(int(row[2])), axis=1)
+    df["id"] = df.apply(lambda row: str(int(row["sample"])) + "_" + str(int(row["segment"])) + "_" + str(int(row["frame"])), axis=1)
     del df["sample"]
     del df["segment"]
     del df["frame"]
@@ -67,7 +68,7 @@ def getSubset(num_samples):
     create_index(labels)
     
     # order by labels
-    data = data.loc[labels.index]
+    labels = labels.loc[data.index]
     
     return data, labels
 
@@ -98,7 +99,7 @@ def evaluate(num_train_examples, num_test_examples, num_trials):
     
     
     
-mean,stdev = evaluate(args.num_train_examples, 3000, args.num_trials)
+mean,stdev = evaluate(args.num_train_examples, args.num_test_examples, args.num_trials)
 
 print("Accuracy:",round(mean,3), "+-", round(stdev,3), "num_trials:",args.num_trials) 
 
