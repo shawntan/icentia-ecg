@@ -8,6 +8,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('embeddings_file', help='File with embeddings')
+parser.add_argument('target_file', nargs='?', type=str, default='test_emb_pca.csv.gz', help='')
 parser.add_argument('pca_nsamples', nargs='?', type=int, default=1000, help='')
 parser.add_argument('pca_dim', nargs='?', type=int, default=2, help='')
 args = parser.parse_args()
@@ -54,7 +55,7 @@ pca.fit(data.values[:,4:])
 
 results = []
 
-ft= gzip.open('test_emb_pca.csv.gz', 'wt')
+ft= gzip.open(args.target_file, 'wt')
 #ft= open('test_emb_pca.csv', 'wt')
 ft.write("sample, segment, frame," + ",".join(map(str, range(args.pca_dim))) + " \n")
 with gzip.open(args.embeddings_file, 'rb') as f:
