@@ -70,7 +70,7 @@ class ConvAutoencoder(torch.nn.Module):
 
 
 class Autoencoder(torch.nn.Module):
-    def __init__(self, mean, std, bottleneck_size=32):
+    def __init__(self, mean=0, std=1, bottleneck_size=32):
         super(Autoencoder, self).__init__()
         self.mean = mean
         self.std = std
