@@ -1,13 +1,14 @@
 import sys
 import numpy as np
+import pickle
+import gzip
 from itertools import chain
 import random
 
 
 def load_file(filename):
     # print(">", filename)
-    data = np.load(filename)
-    data = data['arr_0']
+    data = pickle.load(gzip.open(filename))
     return data
 
 def stream_array(data, chunk_size=5, shuffle=True):
