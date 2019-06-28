@@ -151,7 +151,7 @@ class Autoencoder(torch.nn.Module):
         input_flat = input.view(-1, 1, input.size(-1))
 
         encoding_1 = self.autoencode_1.encode(input_flat)
-        if True:
+        if False:
             test_out = self.autoencode_1.test_conv(input_flat)
             assert(encoding_1.size(-1) == test_out.size(-1))
             print(input_flat.size(), encoding_1.size(), test_out.size())

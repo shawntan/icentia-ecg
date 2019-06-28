@@ -6,6 +6,7 @@ import glob
 # import torch.nn as nn
 from model import Autoencoder
 import data_io
+import sys
 
 report_every = 20
 frame_length = 2**11 + 1
@@ -17,8 +18,11 @@ def data_stream(filenames, shuffle=True):
 
 
 if __name__ == "__main__":
-    directory = "./test"
-    filenames = glob.glob(directory + "/*_batched.pkl.gz")
+    directory = sys.argv[1]
+    filenames = (glob.glob(directory + "/?_batched.pkl.gz") +\
+                 glob.glob(directory + "/??_batched.pkl.gz") +\
+                 glob.glob(directory + "/???_batched.pkl.gz") +\
+                 glob.glob(directory + "/????_batched.pkl.gz"))
     train_count = int(len(filenames) * 0.9)
     train_filenames = filenames[:train_count]
     valid_filenames = filenames[train_count:]
