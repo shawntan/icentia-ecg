@@ -23,7 +23,7 @@ labels = None
 results = []
 
 #f= open("test_emb.csv","w+")
-f= gzip.open('test_emb.csv.gz', 'wt')
+f= gzip.open('test_emb_enc.csv.gz', 'wt')
 f.write("sample, segment, frame," + ",".join(map(str, range(frame_length))) + " \n")
 
 for index, row in test_labels.iterrows():
