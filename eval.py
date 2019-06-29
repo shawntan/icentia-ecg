@@ -5,6 +5,7 @@ import sys
 import pandas as pd
 import sklearn, sklearn.model_selection, sklearn.neighbors
 import gzip
+import utils
 
 
 parser = argparse.ArgumentParser()
@@ -16,15 +17,6 @@ parser.add_argument('labels_file', nargs='?', default="test_labels.csv.gz", help
 args = parser.parse_args()
 
 print(args)
-
-def create_index(df):
-    # create index col and remove source columns
-    df["id"] = df.apply(lambda row: str(int(row["sample"])) + "_" + str(int(row["segment"])) + "_" + str(int(row["frame"])), axis=1)
-    del df["sample"]
-    del df["segment"]
-    del df["frame"]
-    df.set_index("id", inplace=True)
-
 
 ## get counts
 lines_emb = 0
@@ -42,35 +34,6 @@ print("lines_emb:", lines_emb)
 if lines_labels != lines_emb:
     print(" !! Issue with coverage of labels. The data must align to the labels.")
     sys.exit()
-    
-        
-np.random.seed(0)
-def getSubset(num_samples):
-    tosample = np.random.choice(lines_emb, num_samples, replace=False)
-    subset = []
-    with gzip.open(args.embeddings_file, 'rb') as f:
-        header = f.readline().decode('ascii').replace("\n","")
-        
-        for i, line in enumerate(f):
-            if (i in tosample):
-                subset.append(line.decode('ascii').replace("\n","").split(","))
-    data = pd.DataFrame(subset, columns=header.replace(" ","").split(","))
-    create_index(data)
-    
-    subset = []
-    with gzip.open(args.labels_file, 'rb') as f:
-        header = f.readline().decode('ascii').replace("\n","")
-        
-        for i, line in enumerate(f):
-            if (i in tosample):
-                subset.append(line.decode('ascii').replace("\n","").split(","))
-    labels = pd.DataFrame(subset, columns=header.replace(" ","").split(","))
-    create_index(labels)
-    
-    # order by labels
-    labels = labels.loc[data.index]
-    
-    return data, labels
 
 def evaluate(num_train_examples, num_test_examples, num_trials):
     
@@ -78,8 +41,10 @@ def evaluate(num_train_examples, num_test_examples, num_trials):
     for i in range(num_trials):
         
         print("Generating subset", i)
-        data, labels = getSubset(num_train_examples+num_test_examples)
+        metadata, data, labels = utils.getSubset(num_train_examples+num_test_examples, embeddings_file=args.embeddings_file)
         
+        import collections
+        print(collections.Counter(labels))
         X, X_test, y, y_test = \
             sklearn.model_selection.train_test_split(data, labels, 
                                                      train_size=num_train_examples, 

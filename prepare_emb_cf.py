@@ -19,6 +19,8 @@ enc = getattr(encoders, args.encode_method)()
 
 target_file = "test_emb_" + args.encode_method + ".csv.gz"
 
+print("Writing to file: ", target_file)
+
 ft= gzip.open(target_file, 'wt')
 #ft= open('test_emb_pca.csv', 'wt')
 needs_header = True
@@ -35,13 +37,13 @@ with gzip.open(args.embeddings_file, 'rb') as f:
             try:
                 iemb = enc.encode(toemb)
             except ValueError as e:
-                print(e)
+                print(" Error:",e," Writing zeros instead.")
                 iemb = np.zeros(emb_length)
             
             if needs_header:
                 emb_length = len(iemb)
-                print("emb length:",len(iemb)) 
-                ft.write("sample, segment, frame," + ",".join(map(str, range(len(iemb)))) + " \n")
+                print(" Embedding length:",emb_length) 
+                ft.write("sample, segment, frame," + ",".join(map(str, range(emb_length))) + " \n")
                 needs_header = False
             
             ft.write(str(row[0]) + "," + 
@@ -49,5 +51,7 @@ with gzip.open(args.embeddings_file, 'rb') as f:
                 str(row[2]) + "," +
                 ','.join(iemb.astype("float32").astype("str")) + 
                 "\n")
-            gc.collect()
+            
+            if i % 5000 == 0:
+                gc.collect()
 
