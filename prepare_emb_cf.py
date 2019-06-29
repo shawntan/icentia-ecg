@@ -37,13 +37,13 @@ with gzip.open(args.embeddings_file, 'rb') as f:
             try:
                 iemb = enc.encode(toemb)
             except ValueError as e:
-                print(e)
+                print(" Error:",e," Writing zeros instead.")
                 iemb = np.zeros(emb_length)
             
             if needs_header:
                 emb_length = len(iemb)
-                print(" Embedding length:",len(iemb)) 
-                ft.write("sample, segment, frame," + ",".join(map(str, range(len(iemb)))) + " \n")
+                print(" Embedding length:",emb_length) 
+                ft.write("sample, segment, frame," + ",".join(map(str, range(emb_length))) + " \n")
                 needs_header = False
             
             ft.write(str(row[0]) + "," + 
@@ -51,5 +51,7 @@ with gzip.open(args.embeddings_file, 'rb') as f:
                 str(row[2]) + "," +
                 ','.join(iemb.astype("float32").astype("str")) + 
                 "\n")
-            gc.collect()
+            
+            if i % 5000 == 0:
+                gc.collect()
 

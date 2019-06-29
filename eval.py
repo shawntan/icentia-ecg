@@ -41,10 +41,12 @@ def evaluate(num_train_examples, num_test_examples, num_trials):
     for i in range(num_trials):
         
         print("Generating subset", i)
+        
         data, labels = utils.getSubset(num_train_examples+num_test_examples, embeddings_file=args.embeddings_file)
         
         import collections
         print(collections.Counter(labels["label"]))
+
         X, X_test, y, y_test = \
             sklearn.model_selection.train_test_split(data, labels["label"], 
                                                      train_size=num_train_examples, 
