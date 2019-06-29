@@ -19,6 +19,8 @@ enc = getattr(encoders, args.encode_method)()
 
 target_file = "test_emb_" + args.encode_method + ".csv.gz"
 
+print("Writing to file: ", target_file)
+
 ft= gzip.open(target_file, 'wt')
 #ft= open('test_emb_pca.csv', 'wt')
 needs_header = True
@@ -40,7 +42,7 @@ with gzip.open(args.embeddings_file, 'rb') as f:
             
             if needs_header:
                 emb_length = len(iemb)
-                print("emb length:",len(iemb)) 
+                print(" Embedding length:",len(iemb)) 
                 ft.write("sample, segment, frame," + ",".join(map(str, range(len(iemb)))) + " \n")
                 needs_header = False
             
