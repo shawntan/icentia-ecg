@@ -49,21 +49,21 @@ def getSubset(num_samples):
     tosample = np.random.choice(lines_emb, num_samples, replace=False)
     subset = []
     with gzip.open(args.embeddings_file, 'rb') as f:
-        header = f.readline().decode('ascii')
+        header = f.readline().decode('ascii').replace("\n","")
         
         for i, line in enumerate(f):
             if (i in tosample):
-                subset.append(line.decode('ascii').split(","))
+                subset.append(line.decode('ascii').replace("\n","").split(","))
     data = pd.DataFrame(subset, columns=header.replace(" ","").split(","))
     create_index(data)
     
     subset = []
     with gzip.open(args.labels_file, 'rb') as f:
-        header = f.readline().decode('ascii')
+        header = f.readline().decode('ascii').replace("\n","")
         
         for i, line in enumerate(f):
             if (i in tosample):
-                subset.append(line.decode('ascii').split(","))
+                subset.append(line.decode('ascii').replace("\n","").split(","))
     labels = pd.DataFrame(subset, columns=header.replace(" ","").split(","))
     create_index(labels)
     
