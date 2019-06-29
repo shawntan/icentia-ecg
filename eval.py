@@ -4,9 +4,11 @@ import matplotlib.pylab as plt
 import sys
 import pandas as pd
 import sklearn, sklearn.model_selection, sklearn.neighbors
+import sklearn.linear_model
 import gzip
 import utils
-
+import encoders
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('embeddings_file', help='File with embeddings')
@@ -14,9 +16,16 @@ parser.add_argument('num_train_examples', nargs='?', type=int, default=5000, hel
 parser.add_argument('num_test_examples', nargs='?', type=int, default=5000, help='')
 parser.add_argument('num_trials', nargs='?', type=int, default=10, help='')
 parser.add_argument('labels_file', nargs='?', default="test_labels.csv.gz", help='')
+parser.add_argument('-model', type=str, default="knn", choices=["knn", "lr"],help='Model to evaluate embeddings with.')
+parser.add_argument('-encode_method', type=str, default=None, choices=[o for o in dir(encoders) if not o.startswith("_")], help='to encode the signals on the fly')
 args = parser.parse_args()
 
 print(args)
+
+enc = None
+if args.encode_method != None:
+    enc = getattr(encoders, args.encode_method)()
+    print("Encoder:",enc)
 
 ## get counts
 lines_emb = 0
@@ -44,6 +53,12 @@ def evaluate(num_train_examples, num_test_examples, num_trials):
         
         data, labels = utils.getSubset(num_train_examples+num_test_examples, embeddings_file=args.embeddings_file)
         
+        if enc:
+            newdata = []
+            for emb in tqdm(data.values):
+                newdata.append(enc.encode(emb))
+            data = np.asarray(newdata)
+        
         import collections
         print(collections.Counter(labels["label"]))
 
@@ -54,7 +69,15 @@ def evaluate(num_train_examples, num_test_examples, num_trials):
                                                      stratify=labels["label"],
                                                      random_state=i)
         print("X", X.shape, "X_test", X_test.shape)
-        model = sklearn.neighbors.KNeighborsClassifier(n_neighbors=1)
+        if args.model == "knn":
+            model = sklearn.neighbors.KNeighborsClassifier(n_neighbors=1)
+        elif args.model == "lr":
+            model = sklearn.linear_model.LogisticRegression(multi_class="auto")
+        else:
+            print("Unknown model")
+            sys.exit();
+            
+        print(model)
         model = model.fit(X, y.values.flatten())
 
         acc = (model.predict(X_test) == y_test.values.flatten()).mean()

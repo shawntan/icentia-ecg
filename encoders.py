@@ -5,6 +5,9 @@ class rand():
     def __init__(self):
         pass
     
+    def __str__(self):
+         return str(self.__class__)
+    
     def encode(self, x):
         return np.random.rand(2)
 
@@ -15,6 +18,9 @@ class convautoencoder():
         import model
         self.enc = model.Autoencoder()
         self.enc.eval()
+        
+    def __str__(self):
+         return str(self.__class__)
     
     def encode(self, x):
         import torch
@@ -30,6 +36,9 @@ class pca():
         self.pca_dim = pca_dim
         self.pca = PCA(n_components=pca_dim)
         self.pca.fit(data)
+        
+    def __str__(self):
+         return str(self.__class__) + " " + str({"pca_dim":self.pca_dim})
     
     def encode(self, x):
         return self.pca.transform([x])[0]
@@ -40,6 +49,9 @@ class fft():
     def __init__(self):
         pass
     
+    def __str__(self):
+         return str(self.__class__)
+    
     def encode(self, x):
         import scipy.fftpack
         N = len(x)
@@ -47,15 +59,29 @@ class fft():
         return np.abs(yf[:N//2])
 
 
-class biosppy():
+class biosppy_mean_beat():
+    # BioSPPy
+    # https://biosppy.readthedocs.io/en/stable/biosppy.html
+    # Carreiras, Carlos, et al. BioSPPy: Biosignal Processing in {Python}. 2015, https://github.com/PIA-Group/BioSPPy/.
     
-    def __init__(self):
-        pass
+    def __init__(self, sampling_rate=100.):
+        self.sampling_rate=sampling_rate
+    
+    def __str__(self):
+         return str(self.__class__) + " " + str({"sampling_rate":self.sampling_rate})
     
     def encode(self, x):
         from biosppy.signals import ecg
-        out = ecg.ecg(signal=x, sampling_rate=500., show=False)
-        return np.concatenate([out["templates"].T.mean(1), out["templates"].T.std(1)], axis=0)
+        
+        try:
+            out = ecg.ecg(signal=x, sampling_rate=self.sampling_rate, show=False)
+            out = np.concatenate([out["templates"].T.mean(1), out["templates"].T.std(1)], axis=0)
+        except ValueError as e:
+            print(" Error:",e," Writing zeros instead.")
+            out = np.zeros(self.emb_length)
+        
+        self.emb_length = len(out)
+        return out
 
 
 
