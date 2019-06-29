@@ -13,6 +13,7 @@ def create_index(df, remove_meta=False):
         del df["frame"]
     df.set_index("id", inplace=True)
 
+# get a subset of the data without reading every line into memory.
 def getSubset(num_samples, lines_emb=420493, seed=0, 
               embeddings_file="test_emb.csv.gz", 
               labels_file="test_labels.csv.gz"):
@@ -25,14 +26,16 @@ def getSubset(num_samples, lines_emb=420493, seed=0,
         
         for i, line in enumerate(f):
             if (i in tosample):
-                subset.append(line.decode('ascii').replace("\n","").split(","))
+                a = line.decode('ascii').replace("\n","").split(",")
+                a = [float(i) for i in a] #convert here for memory
+                subset.append(a)
+                
     aheader = header.replace(" ","").split(",")
     aheader = aheader[:len(subset[0])] # patch to deal with incorrect length of header
     data = pd.DataFrame(subset, columns=aheader)
     create_index(data, remove_meta=True)
     
-    metadata = data.iloc[:,:3]
-    data = data.iloc[:,3:].astype("float32")
+    data = data.astype("float32")
     
     subset = []
     with gzip.open(labels_file, 'rb') as f:
