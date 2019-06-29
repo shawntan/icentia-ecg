@@ -12,14 +12,15 @@ class rand():
 class convautoencoder():
     
     def __init__(self):
+        import model
         self.enc = model.Autoencoder()
         self.enc.eval()
     
     def encode(self, x):
+        import torch
         x = torch.from_numpy(x)
         emb = self.enc.autoencode_1.encode(x[None, None, :])[0, :, 0].detach().numpy()
         return emb
-
 
 
 class pca():
