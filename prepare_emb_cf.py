@@ -27,31 +27,27 @@ needs_header = True
 emb_length = None
 
 with gzip.open(args.embeddings_file, 'rb') as f:
-        header = f.readline().decode('ascii').replace("\n","").split(",")
+    header = f.readline().decode('ascii').replace("\n","").split(",")
 
-        for i, line in tqdm(enumerate(f)):
-            row = line.decode('ascii').replace("\n","").split(",")
-            
-            toemb = np.asarray(row[3:],dtype="float32")
-            
-            try:
-                iemb = enc.encode(toemb)
-            except ValueError as e:
-                print(" Error:",e," Writing zeros instead.")
-                iemb = np.zeros(emb_length)
-            
-            if needs_header:
-                emb_length = len(iemb)
-                print(" Embedding length:",emb_length) 
-                ft.write("sample, segment, frame," + ",".join(map(str, range(emb_length))) + " \n")
-                needs_header = False
-            
-            ft.write(str(row[0]) + "," + 
-                str(row[1]) + "," + 
-                str(row[2]) + "," +
-                ','.join(iemb.astype("float32").astype("str")) + 
-                "\n")
-            
-            if i % 5000 == 0:
-                gc.collect()
+    for i, line in tqdm(enumerate(f)):
+        row = line.decode('ascii').replace("\n","").split(",")
+
+        toemb = np.asarray(row[3:],dtype="float32")
+
+        iemb = enc.encode(toemb)
+
+        if needs_header:
+            emb_length = len(iemb)
+            print(" Embedding length:",emb_length) 
+            ft.write("sample, segment, frame," + ",".join(map(str, range(emb_length))) + " \n")
+            needs_header = False
+
+        ft.write(str(row[0]) + "," + 
+            str(row[1]) + "," + 
+            str(row[2]) + "," +
+            ','.join(iemb.astype("float32").astype("str")) + 
+            "\n")
+
+        if i % 5000 == 0:
+            gc.collect()
 
