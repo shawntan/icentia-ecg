@@ -50,4 +50,8 @@ def getSubset(num_samples, lines_emb=420493, seed=0,
     # order by labels
     labels = labels.loc[data.index]
     
+    # convert to small number
+    labels = labels.astype("int32")
+    labels["label"] = labels["label"].values.astype("int8")
+    
     return data, labels

@@ -12,8 +12,7 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('embeddings_file', help='File with embeddings')
-parser.add_argument('num_train_examples', nargs='?', type=int, default=5000, help='')
-parser.add_argument('num_test_examples', nargs='?', type=int, default=5000, help='')
+parser.add_argument('num_examples', nargs='?', type=int, default=5000, help='')
 parser.add_argument('num_trials', nargs='?', type=int, default=10, help='')
 parser.add_argument('labels_file', nargs='?', default="test_labels.csv.gz", help='')
 parser.add_argument('-model', type=str, default="knn", choices=["knn", "lr"],help='Model to evaluate embeddings with.')
@@ -44,14 +43,18 @@ if lines_labels != lines_emb:
     print(" !! Issue with coverage of labels. The data must align to the labels.")
     sys.exit()
 
-def evaluate(num_train_examples, num_test_examples, num_trials):
+def evaluate(num_examples, num_trials):
     
     all_acc = []
     for i in range(num_trials):
         
         print("Generating subset", i)
         
-        data, labels = utils.getSubset(num_train_examples+num_test_examples, embeddings_file=args.embeddings_file)
+        data, labels = utils.getSubset(num_examples, embeddings_file=args.embeddings_file)
+        
+        # remove class 0
+        data = data[labels["label"] != 0]
+        labels = labels[labels["label"] != 0]
         
         if enc:
             newdata = []
@@ -64,8 +67,8 @@ def evaluate(num_train_examples, num_test_examples, num_trials):
 
         X, X_test, y, y_test = \
             sklearn.model_selection.train_test_split(data, labels["label"], 
-                                                     train_size=num_train_examples, 
-                                                     test_size=num_test_examples, 
+                                                     train_size=len(labels)//2, 
+                                                     test_size=len(labels)//2, 
                                                      stratify=labels["label"],
                                                      random_state=i)
         print("X", X.shape, "X_test", X_test.shape)
@@ -89,7 +92,7 @@ def evaluate(num_train_examples, num_test_examples, num_trials):
     
     
     
-mean,stdev = evaluate(args.num_train_examples, args.num_test_examples, args.num_trials)
+mean,stdev = evaluate(args.num_examples, args.num_trials)
 
 print("Accuracy:",round(mean,3), "+-", round(stdev,3), "num_trials:",args.num_trials) 
 
