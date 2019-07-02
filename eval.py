@@ -94,7 +94,7 @@ def evaluate(num_examples, num_trials):
     
 mean,stdev = evaluate(args.num_examples, args.num_trials)
 
-print("Accuracy:",round(mean,3), "+-", round(stdev,3), "num_trials:",args.num_trials) 
+print("Accuracy:",round(mean,3), "+-", round(stdev,3), "num_trials:",args.num_trials, args) 
 
     
     
