@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 class rand():
 
@@ -13,15 +14,16 @@ class rand():
 
 
 class convautoencoder():
-    
+
     def __init__(self):
         import model
-        self.enc = model.Autoencoder()
+        # self.enc = model.Autoencoder()
+        self.enc = torch.load('model.pt', map_location='cpu')
         self.enc.eval()
-        
+
     def __str__(self):
          return str(self.__class__)
-    
+
     def encode(self, x):
         import torch
         x = torch.from_numpy(x)
