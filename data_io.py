@@ -40,34 +40,48 @@ def buffered_random(stream, buffer_items=100, leak_percent=0.9):
             yield item
 
 
-def stream_file_list(filenames, buffer_count=100, batch_size=10,
+def stream_file_list(filenames, buffer_count=20, batch_size=10,
                      shuffle=True):
+    filenames = filenames.copy()
     if shuffle:
         random.shuffle(filenames)
     result = []
     streams = []
     while len(streams) < buffer_count and len(filenames) > 0:
-        streams.append(stream_array(load_file(filenames.pop()),
-                                    shuffle=shuffle))
+        try:
+            streams.append(stream_array(load_file(filenames.pop()),
+                                        shuffle=shuffle))
+        except IOError:
+            pass
+        except EOFError:
+            pass
     while len(streams) > 0 or len(filenames) > 0:
         i = 0
-        while i < len(streams) and len(result) < batch_size:
+        while len(result) < batch_size and len(streams) > 0:
             try:
+                i = i % len(streams)
                 next_item = next(streams[i])
                 i = (i + 1) % len(streams)
                 result.append(next_item)
             except StopIteration:
+                # print("Need to looad new file")
                 stream = None
                 while len(filenames) > 0:
                     try:
                         stream = stream_array(load_file(filenames.pop()),
-                                                  shuffle=shuffle)
-                    except:
+                                              shuffle=shuffle)
+                        break
+                    except IOError:
                         pass
-                if stream is None:
+                    except EOFError:
+                        pass
+                if stream is not None:
+                    streams[i] = stream
+                else:
                     streams = streams[:i] + streams[i+1:]
         if len(result) > 0:
-            yield np.stack(result)
+            if all(x.shape == result[0].shape for x in result):
+                yield np.stack(result)
             result = []
         if shuffle:
             random.shuffle(streams)
@@ -76,7 +90,9 @@ def stream_file_list(filenames, buffer_count=100, batch_size=10,
 if __name__ == "__main__":
     import glob
     from pprint import pprint
-    directory = "/home/shawntan/projects/rpp-bengioy/jpcohen/icentia-ecg-dataset"
-    filenames = glob.glob(directory + "/*_batched.npz")
+    directory = "/home/shawntan/projects/rpp-bengioy/jpcohen/icentia12k"
+    print(directory + "/*_batched.pkl.gz")
+    filenames = glob.glob(directory + "/*_batched.pkl.gz")
+    print(filenames)
     stream = stream_file_list(filenames)
     print(sum(x.shape[0] for x in stream))
