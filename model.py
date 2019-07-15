@@ -84,10 +84,10 @@ class Autoencoder(torch.nn.Module):
         # (  1,  16, 2049, 256),
         self.autoencode_1 = ConvAutoencoder([
                 # in, out, kernel, stride
-                ( 1,  64, 129,  64),
-                (64,  64,   7,   4),
-                (64, 128,   3,   2),
-                (128, frame_dim,   3,   2),
+                (  1, 128, 129,  64),
+                (128, 256,   7,   4),
+                (256, 512,   3,   2),
+                (512, frame_dim,   3,   2),
             ],
             debug=True
         )
