@@ -29,6 +29,9 @@ if __name__ == "__main__":
 
     btype_idxs = [data['qrs'][data['qrs']['bType']==btype_id]['index']
                   for btype_id in range(5)]
+    rtype_idxs = [data['qrs'][data['qrs']['rType']==rtype_id]['index']
+                  for rtype_id in range(6)]
+
 
 
     length = signal.shape[0]
@@ -47,11 +50,20 @@ if __name__ == "__main__":
         for btype in range(5):
             start = s_idx * chunk_length
             end = start + chunk_length
-            points = (btype_idxs[btype][(start <=  btype_idxs[btype]) &
-                                        (btype_idxs[btype] < end)] -
+            bpoints = (btype_idxs[btype][(start <=  btype_idxs[btype]) &
+                                         (btype_idxs[btype] < end)] -
                       start)
-            chunk_btype_idxs.append(points)
-        annotations.append(chunk_btype_idxs)
+            chunk_btype_idxs.append(bpoints)
+
+        chunk_rtype_idxs = []
+        for rtype in range(6):
+
+            rpoints = (rtype_idxs[rtype][(start <=  rtype_idxs[rtype]) &
+                                         (rtype_idxs[rtype] < end)] -
+                      start)
+            chunk_rtype_idxs.append(rpoints)
+        annotations.append({'btype': chunk_btype_idxs,
+                            'rtype': chunk_rtype_idxs})
 
     with gzip.open(out_filename, 'wb', compresslevel=9) as f:
         pickle.dump(selected_array, f, 2)
