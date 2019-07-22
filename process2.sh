@@ -18,11 +18,11 @@ run_with_lock(){
     )&
 }
 
-N=8
+N=16
 open_sem $N
 toprocess=`find ~/projects/rpp-bengioy/jpcohen/icentia-mila-research -name "*npz" ! -name "*batched*" -print`
 for thing in $toprocess; do
-    run_with_lock python data_split.py $thing ~/projects/rpp-bengioy/jpcohen/icentia-dataset
+    run_with_lock bash process-single.sh $thing
 done 
 
 #find ~/projects/rpp-bengioy/jpcohen/icentia-mila-research -name "*npz" ! -name "*batched*" -exec echo {} \; -exec python data_split.py {} ~/projects/rpp-bengioy/jpcohen/icentia12k/ \;

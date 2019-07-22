@@ -18,7 +18,7 @@ if __name__ == "__main__":
     out_filename = filename + "_batched.pkl.gz"
     out_annotationfile = filename + "_batched_lbls.pkl.gz"
 
-    if os.path.isfile(out_filename) and os.path.isfile(out_annotationfile):
+    if os.path.isfile(out_filename) and os.path.isfile(out_annotationfile) and (os.path.getsize(out_filename) != 0):
         print("Both files exist already. Exiting.", out_filename)
         sys.exit()
     print("Processing: ", out_filename)
