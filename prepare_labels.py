@@ -13,6 +13,8 @@ parser.add_argument('-segment_length', nargs='?', type=int, default=1000000)
 parser.add_argument('-frame_length', nargs='?', type=int, default=2**11+1)
 parser.add_argument('-num_segments', nargs='?', type=int, default=50)
 parser.add_argument('-max_idx_per_label', nargs='?', type=int, default=1)
+parser.add_argument('-start_idx', nargs='?', type=int, default=10001)
+parser.add_argument('-end_idx', nargs='?', type=int, default=12971)
 args = parser.parse_args()
 
 def build_label_dict(segment, label_type):
@@ -30,6 +32,9 @@ def extract_labels(sample_id, segment_id, segment_labels, test_labels):
 
             idx_toselect = segment_labels["btype"][label]
 
+            # remove idxs that don't have rtype labeled
+            idx_toselect = list(filter(lambda x: x in rtype, idx_toselect))
+            
             # filter below 1/2 frame
             idx_toselect = list(filter(lambda x: x >(args.frame_length/2), idx_toselect))
 
@@ -45,11 +50,9 @@ def extract_labels(sample_id, segment_id, segment_labels, test_labels):
                 test_labels.append(test_label)
 
 test_labels = []
-start = 10001
-end = 12971
-for sample_id in range(start, end): # range of text examples
+for sample_id in range(args.start_idx, args.end_idx): # range of text examples
     filename = os.path.join(args.dataset_path, str(sample_id) + "_batched_lbls.pkl.gz")
-    print("{}/{} ".format(sample_id, end) + filename)
+    print("{}/{} ".format(sample_id, args.end_idx) + filename)
     
     if (not os.path.isfile(filename)):
         print("##### File missing")
