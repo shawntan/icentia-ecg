@@ -52,6 +52,24 @@ def getSubset(num_samples, lines_emb=420493, seed=0,
     
     # convert to small number
     labels = labels.astype("int32")
-    labels["label"] = labels["label"].values.astype("int8")
+    labels["btype"] = labels["btype"].values.astype("int8")
+    labels["rtype"] = labels["rtype"].values.astype("int8")
     
     return data, labels
+
+
+btype_names = {
+    0:"0 Undefined",
+    1:"1 Normal",
+    2:"2 ESSV (PAC)",
+    3:"3 Aberrated",
+    4:"4 ESV (PVC)"
+}
+rtype_names = {
+    0:"0 Null/Undefined",
+    1:"1 End (essentially noise)",
+    2:"2 Noise",
+    3:"3 NSR (normal sinusal rhythm)",
+    4:"4 AFib",
+    5:"5 AFlutter"
+}

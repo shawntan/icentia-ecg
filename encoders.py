@@ -12,6 +12,16 @@ class rand():
     def encode(self, x):
         return np.random.rand(2)
 
+class none():
+
+    def __init__(self):
+        pass
+    
+    def __str__(self):
+         return str(self.__class__)
+    
+    def encode(self, x):
+        return x
 
 class convautoencoder():
 

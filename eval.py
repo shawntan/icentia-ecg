@@ -8,6 +8,7 @@ import sklearn.linear_model
 import gzip
 import utils
 import encoders
+import collections
 from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
@@ -43,7 +44,8 @@ if lines_labels != lines_emb:
     print(" !! Issue with coverage of labels. The data must align to the labels.")
     sys.exit()
 
-def evaluate(num_examples, num_trials):
+
+def evaluate(num_examples, num_trials, label_type):
     
     all_acc = []
     for i in range(num_trials):
@@ -52,9 +54,13 @@ def evaluate(num_examples, num_trials):
         
         data, labels = utils.getSubset(num_examples, embeddings_file=args.embeddings_file)
         
-        # remove class 0
-        data = data[labels["label"] != 0]
-        labels = labels[labels["label"] != 0]
+        # remove class 0 from btype
+        data = data[labels["btype"] != 0]
+        labels = labels[labels["btype"] != 0]
+        
+        # remove class 0 from rtype
+        data = data[labels["rtype"] != 0]
+        labels = labels[labels["rtype"] != 0]
         
         if enc:
             newdata = []
@@ -62,14 +68,13 @@ def evaluate(num_examples, num_trials):
                 newdata.append(enc.encode(emb))
             data = np.asarray(newdata)
         
-        import collections
-        print(collections.Counter(labels["label"]))
+        print(collections.Counter(labels[label_type]))
 
         X, X_test, y, y_test = \
-            sklearn.model_selection.train_test_split(data, labels["label"], 
+            sklearn.model_selection.train_test_split(data, labels[label_type], 
                                                      train_size=len(labels)//2, 
                                                      test_size=len(labels)//2, 
-                                                     stratify=labels["label"],
+                                                     stratify=labels[label_type],
                                                      random_state=i)
         print("X", X.shape, "X_test", X_test.shape)
         if args.model == "knn":
@@ -86,15 +91,17 @@ def evaluate(num_examples, num_trials):
         acc = (model.predict(X_test) == y_test.values.flatten()).mean()
         all_acc.append(acc)
         
-        print("   Run " + str(i) + ", Accuracy:",acc) 
+        print("   Run {}".format(i) + ", label_type: {}".format(label_type) + ", Accuracy: {}".format(acc)) 
 
     return np.asarray(all_acc).mean(), np.asarray(all_acc).std()
     
     
     
-mean,stdev = evaluate(args.num_examples, args.num_trials)
+mean,stdev = evaluate(args.num_examples, args.num_trials, "btype")
+print("btype, Accuracy:",round(mean,3), "+-", round(stdev,3), "num_trials:",args.num_trials, args) 
 
-print("Accuracy:",round(mean,3), "+-", round(stdev,3), "num_trials:",args.num_trials, args) 
+mean,stdev = evaluate(args.num_examples, args.num_trials, "rtype")
+print("rtype, Accuracy:",round(mean,3), "+-", round(stdev,3), "num_trials:",args.num_trials, args) 
 
     
     
