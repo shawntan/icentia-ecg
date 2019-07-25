@@ -28,9 +28,10 @@ def extract_labels(sample_id, segment_id, segment_labels, test_labels):
     
         btype = build_label_dict(segment_labels, "btype")
         rtype = build_label_dict(segment_labels, "rtype")
-        for label in range(len(segment_labels["btype"])):
-
-            idx_toselect = segment_labels["btype"][label]
+        
+        all_idx_toselect = []
+        
+        for label, idx_toselect in enumerate(segment_labels["btype"]):
 
             # remove idxs that don't have rtype labeled
             idx_toselect = list(filter(lambda x: x in rtype, idx_toselect))
@@ -44,10 +45,29 @@ def extract_labels(sample_id, segment_id, segment_labels, test_labels):
             # keep number of samples per label to less than max_idx_per_label
             if len(idx_toselect) > args.max_idx_per_label:
                 idx_toselect = np.random.choice(idx_toselect, args.max_idx_per_label, replace=False)
+                
+            all_idx_toselect += list(idx_toselect)
+                
+        for label, idx_toselect in enumerate(segment_labels["rtype"]):
 
-            for idx in idx_toselect:
-                test_label = [sample_id, segment_id, idx, btype[idx], rtype[idx]]
-                test_labels.append(test_label)
+            # remove idxs that don't have btype labeled
+            idx_toselect = list(filter(lambda x: x in btype, idx_toselect))
+            
+            # filter below 1/2 frame
+            idx_toselect = list(filter(lambda x: x >(args.frame_length/2), idx_toselect))
+
+            # filter above length-1/2 frame
+            idx_toselect = list(filter(lambda x: x <(args.segment_length-(args.frame_length/2)), idx_toselect))
+
+            # keep number of samples per label to less than max_idx_per_label
+            if len(idx_toselect) > args.max_idx_per_label:
+                idx_toselect = np.random.choice(idx_toselect, args.max_idx_per_label, replace=False)
+            
+            all_idx_toselect += list(idx_toselect)
+
+        for idx in np.unique(all_idx_toselect):
+            test_label = [sample_id, segment_id, idx, btype[idx], rtype[idx]]
+            test_labels.append(test_label)
 
 test_labels = []
 for sample_id in range(args.start_idx, args.end_idx): # range of text examples
