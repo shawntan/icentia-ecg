@@ -39,6 +39,12 @@ class convautoencoder():
         x = torch.from_numpy(x)
         emb = self.enc.autoencode_1.encode(x[None, None, :])[0, :, 0].detach().numpy()
         return emb
+    
+    def decode(self, x):
+        import torch
+        x = torch.from_numpy(x)
+        emb = self.enc.autoencode_1.decode(x[None,:,None]).detach().numpy()
+        return emb
 
 
 class pca():
