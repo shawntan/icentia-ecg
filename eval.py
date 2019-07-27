@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('embeddings_file', help='File with embeddings')
-parser.add_argument('num_examples', nargs='?', type=int, default=5000, help='')
+parser.add_argument('num_examples', nargs='?', type=int, default=10000, help='')
 parser.add_argument('num_trials', nargs='?', type=int, default=10, help='')
 parser.add_argument('labels_file', nargs='?', default="test_labels.csv.gz", help='')
 parser.add_argument('-model', type=str, default="knn", choices=["knn", "lr"],help='Model to evaluate embeddings with.')
@@ -52,7 +52,7 @@ def evaluate(num_examples, num_trials, label_type):
         
         print("Generating subset", i)
         
-        data, labels = utils.getSubset(num_examples, embeddings_file=args.embeddings_file)
+        data, labels = utils.getSubset(num_examples, embeddings_file=args.embeddings_file, seed=i)
         
         # remove class 0 from btype
         data = data[labels["btype"] != 0]
@@ -97,11 +97,11 @@ def evaluate(num_examples, num_trials, label_type):
     
     
     
-mean,stdev = evaluate(args.num_examples, args.num_trials, "btype")
-print("btype, Accuracy:",round(mean,3), "+-", round(stdev,3), "num_trials:",args.num_trials, args) 
+btype_mean,btype_stdev = evaluate(args.num_examples, args.num_trials, "btype")
+rtype_mean,rtype_stdev = evaluate(args.num_examples, args.num_trials, "rtype")
 
-mean,stdev = evaluate(args.num_examples, args.num_trials, "rtype")
-print("rtype, Accuracy:",round(mean,3), "+-", round(stdev,3), "num_trials:",args.num_trials, args) 
+print("btype, Accuracy:",round(btype_mean,3), "+-", round(btype_stdev,3), "num_trials:",args.num_trials, args) 
+print("rtype, Accuracy:",round(rtype_mean,3), "+-", round(rtype_stdev,3), "num_trials:",args.num_trials, args) 
 
     
     
