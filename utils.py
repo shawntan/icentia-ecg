@@ -13,10 +13,46 @@ def create_index(df, remove_meta=False):
         del df["frame"]
     df.set_index("id", inplace=True)
 
-# get a subset of the data without reading every line into memory.
-def getSubset(num_samples, lines_emb=420493, seed=0, 
+def lines_in_file(embeddings_file):
+    with gzip.open(embeddings_file, 'rb') as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
+
+# does some caching
+def getSubset(num_samples, cache=True, seed=0, 
               embeddings_file="test_emb.csv.gz", 
               labels_file="test_labels.csv.gz"):
+    args = locals()
+    
+    if not args.pop("cache", None): # pop and remove from dict
+        return getSubsetCore(**args)
+    
+    subset = None
+    args_hash = hash(str(args))
+    args_file = hash(str(os.path.getsize(embeddings_file)) + str(os.path.getmtime(embeddings_file)))
+    filename = ".cache/{}_{}.pkl.gz".format(args_hash, args_file)
+    
+    import pickle
+    
+    if os.path.exists(filename):
+        print("Loading cache {}".format(filename))
+        subset = pickle.load(gzip.GzipFile(filename, 'rb'))
+
+    if subset is None:
+        print("Building cache {}".format(filename))
+        if not os.path.exists(".cache"):
+            os.makedirs(".cache")
+    
+        subset = getSubsetCore(**args)
+        pickle.dump(subset, gzip.GzipFile(filename, 'wb') , protocol=2)
+        
+    return subset
+    
+# get a subset of the data without reading every line into memory.
+def getSubsetCore(num_samples,seed,embeddings_file,labels_file):
+    
+    lines_emb = lines_in_file(labels_file) # get number to pick from
     
     np.random.seed(seed)
     tosample = np.random.choice(lines_emb, num_samples, replace=False)
