@@ -62,6 +62,10 @@ def evaluate(num_examples, num_trials, label_type):
         data = data[labels["rtype"] != 0]
         labels = labels[labels["rtype"] != 0]
         
+        # remove class 1 from rtype
+        data = data[labels["rtype"] != 1]
+        labels = labels[labels["rtype"] != 1]
+        
         if enc:
             newdata = []
             for emb in tqdm(data.values):
