@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('embeddings_file', help='File with embeddings')
-parser.add_argument('num_examples', nargs='?', type=int, default=10000, help='')
+parser.add_argument('num_examples', nargs='?', type=int, default=20000, help='')
 parser.add_argument('num_trials', nargs='?', type=int, default=10, help='')
 parser.add_argument('labels_file', nargs='?', default="test_labels.csv.gz", help='')
 parser.add_argument('-model', type=str, default="knn", choices=["knn", "lr"],help='Model to evaluate embeddings with.')
@@ -78,7 +78,7 @@ def evaluate(num_examples, num_trials, label_type):
                                                      random_state=i)
         print("X", X.shape, "X_test", X_test.shape)
         if args.model == "knn":
-            model = sklearn.neighbors.KNeighborsClassifier(n_neighbors=1)
+            model = sklearn.neighbors.KNeighborsClassifier(n_neighbors=3)
         elif args.model == "lr":
             model = sklearn.linear_model.LogisticRegression(multi_class="auto")
         else:
@@ -87,11 +87,11 @@ def evaluate(num_examples, num_trials, label_type):
             
         print(model)
         model = model.fit(X, y.values.flatten())
-
-        acc = (model.predict(X_test) == y_test.values.flatten()).mean()
-        all_acc.append(acc)
+        y_pred = model.predict(X_test)
+        bacc = sklearn.metrics.balanced_accuracy_score(y_test.values.flatten(),y_pred)
+        all_acc.append(bacc)
         
-        print("   Run {}".format(i) + ", label_type: {}".format(label_type) + ", Accuracy: {}".format(acc)) 
+        print("   Run {}".format(i) + ", label_type: {}".format(label_type) + ", Balanced Accuracy: {}".format(bacc)) 
 
     return np.asarray(all_acc).mean(), np.asarray(all_acc).std()
     
@@ -100,8 +100,8 @@ def evaluate(num_examples, num_trials, label_type):
 btype_mean,btype_stdev = evaluate(args.num_examples, args.num_trials, "btype")
 rtype_mean,rtype_stdev = evaluate(args.num_examples, args.num_trials, "rtype")
 
-print("btype, Accuracy:",round(btype_mean,3), "+-", round(btype_stdev,3), "num_trials:",args.num_trials, args) 
-print("rtype, Accuracy:",round(rtype_mean,3), "+-", round(rtype_stdev,3), "num_trials:",args.num_trials, args) 
+print("btype, Balanced Accuracy:",round(btype_mean,3), "+-", round(btype_stdev,3), "num_trials:",args.num_trials, args) 
+print("rtype, Balanced Accuracy:",round(rtype_mean,3), "+-", round(rtype_stdev,3), "num_trials:",args.num_trials, args) 
 
     
     
