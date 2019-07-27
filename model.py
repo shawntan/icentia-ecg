@@ -32,6 +32,7 @@ class ConvAutoencoder(torch.nn.Module):
             encode_ops.append(conv_op)
             encode_ops.append(activation)
             encode_ops.append(dropout)
+        encode_ops = encode_ops[:-2]
         self.encode = torch.nn.Sequential(*encode_ops)
         erfield, estride = receptive_field(stack_spec)
         print("Effective receptive field:", erfield, estride)
@@ -57,6 +58,7 @@ class ConvAutoencoder(torch.nn.Module):
                 decode_ops.append(conv_op)
                 decode_ops.append(activation)
                 decode_ops.append(dropout)
+            decode_ops = decode_ops[:-2]
             self.decode = torch.nn.Sequential(*decode_ops)
         self.activation = activation
         self.dropout = dropout
@@ -75,7 +77,7 @@ class Autoencoder(torch.nn.Module):
         self.mean = mean
         self.std = std
         activation = torch.nn.ELU()
-        dropout = torch.nn.Dropout(0.5)
+        self.dropout = dropout = torch.nn.Dropout(0.5)
 
         frame_dim = 128
         segment_dim = 256
@@ -91,6 +93,9 @@ class Autoencoder(torch.nn.Module):
             ],
             debug=True
         )
+        print(self.autoencode_1.encode)
+        print(self.autoencode_1.decode)
+
 
         self.encode_2 = torch.nn.Sequential(
             torch.nn.Conv1d(
@@ -151,6 +156,7 @@ class Autoencoder(torch.nn.Module):
         input_flat = input.view(-1, 1, input.size(-1))
 
         encoding_1 = self.autoencode_1.encode(input_flat)
+
         if False:
             test_out = self.autoencode_1.test_conv(input_flat)
             assert(encoding_1.size(-1) == test_out.size(-1))
@@ -162,7 +168,7 @@ class Autoencoder(torch.nn.Module):
         encoding_3 = self.encode_3(encoding_2, input.size())
 
         frame_rep = self.frame_transform(
-                encoding_1.permute(0, 2, 1))
+            self.dropout(F.elu(encoding_1.permute(0, 2, 1))))
         segment_rep = self.segment_transform(encoding_2)[:, None, :]
         patient_rep = encoding_3[:, None, :]\
                         .repeat(1, input.size(1), 1)\
