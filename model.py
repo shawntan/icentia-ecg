@@ -176,9 +176,9 @@ class Autoencoder(torch.nn.Module):
 
 
         decode_rep = self.decode_transform(
-            frame_rep +
-            segment_rep +
-            patient_rep
+            frame_rep
+            # segment_rep +
+            # patient_rep
         ).permute(0, 2, 1)
 
         output = self.autoencode_1.decode(decode_rep)
