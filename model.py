@@ -14,27 +14,89 @@ def receptive_field(op_params):
             print("EVEN", erfield)
     return erfield, estride
 
+
+class ResidualEncoder(torch.nn.Module):
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride,
+                 activation=torch.nn.ELU(), dropout=0.5):
+        super(ResidualEncoder, self).__init__()
+        self.conv_op = torch.nn.Conv1d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=0,
+            dilation=1, groups=1, bias=True
+        )
+
+        self.nin_op = torch.nn.Conv1d(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+            dilation=1, groups=1, bias=True
+        )
+
+        self.dropout = torch.nn.Dropout(0.5)
+        self.activation = activation
+
+    def forward(self, x):
+        z_ = self.conv_op(x)
+        z = self.dropout(self.activation(z_))
+        y_ = self.nin_op(z)
+        y = self.dropout(self.activation(y_)) + z
+        return y
+
+class ResidualDecoder(torch.nn.Module):
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride,
+                 activation=torch.nn.ELU(), dropout=0.5):
+        super(ResidualDecoder, self).__init__()
+        self.conv_op = torch.nn.ConvTranspose1d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            dilation=1, groups=1, bias=True
+        )
+        self.nonlin = torch.nn.Conv1d(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=1,
+            stride=1,
+            dilation=1, groups=1, bias=True
+        )
+        self.dropout = torch.nn.Dropout(0.5)
+        self.activation = activation
+
+    def forward(self, x):
+        z_ = self.conv_op(x)
+        z = self.dropout(self.activation(z_))
+        y_ = self.nonlin(z)
+        # print(y_.size(), z.size())
+        y = self.dropout(self.activation(y_)) + z
+        return y
+
+
+
+
 class ConvAutoencoder(torch.nn.Module):
     def __init__(self, stack_spec, encoder_only=False, debug=False):
         super(ConvAutoencoder, self).__init__()
         activation = torch.nn.ELU()
-        dropout = torch.nn.Dropout(0.5)
         encode_ops = []
+        dropout = torch.nn.Dropout(0.5)
+
         for in_c, out_c, kernel, stride in stack_spec:
-            conv_op = torch.nn.Conv1d(
-                in_channels=in_c,
-                out_channels=out_c,
-                kernel_size=kernel,
-                stride=stride,
-                padding=0,
-                dilation=1, groups=1, bias=True
-            )
-            encode_ops.append(conv_op)
-            encode_ops.append(activation)
-            encode_ops.append(dropout)
-        encode_ops = encode_ops[:-2]
+            encode_ops.append(ResidualEncoder(in_c, out_c, kernel, stride,
+                                              dropout=0.1))
+        #    encode_ops.append(dropout)
+        # encode_ops = encode_ops[:-1]
+
         self.encode = torch.nn.Sequential(*encode_ops)
         erfield, estride = receptive_field(stack_spec)
+
         print("Effective receptive field:", erfield, estride)
         self.test_conv = torch.nn.Conv1d(
             in_channels=1,
@@ -48,17 +110,10 @@ class ConvAutoencoder(torch.nn.Module):
         if not encoder_only:
             decode_ops = []
             for out_c, in_c, kernel, stride in stack_spec[::-1]:
-                conv_op = torch.nn.ConvTranspose1d(
-                    in_channels=in_c,
-                    out_channels=out_c,
-                    kernel_size=kernel,
-                    stride=stride,
-                    dilation=1, groups=1, bias=True
-                )
-                decode_ops.append(conv_op)
-                decode_ops.append(activation)
-                decode_ops.append(dropout)
-            decode_ops = decode_ops[:-2]
+                decode_ops.append(ResidualDecoder(in_c, out_c, kernel, stride,
+                                                  dropout=0.1))
+            #    decode_ops.append(dropout)
+            # decode_ops = decode_ops[:-1]
             self.decode = torch.nn.Sequential(*decode_ops)
         self.activation = activation
         self.dropout = dropout
@@ -86,15 +141,13 @@ class Autoencoder(torch.nn.Module):
         # (  1,  16, 2049, 256),
         self.autoencode_1 = ConvAutoencoder([
                 # in, out, kernel, stride
-                (  1, 128, 129,  64),
-                (128, 256,   7,   4),
-                (256, 512,   3,   2),
-                (512, frame_dim,   3,   2),
+                (  1, 256, 129,  64),
+                (256, 512,   7,   4),
+                (512, 256,   3,   2),
+                (256, frame_dim,   3,   2),
             ],
             debug=True
         )
-        print(self.autoencode_1.encode)
-        print(self.autoencode_1.decode)
 
 
         self.encode_2 = torch.nn.Sequential(
@@ -157,23 +210,19 @@ class Autoencoder(torch.nn.Module):
 
         encoding_1 = self.autoencode_1.encode(input_flat)
 
-        if False:
-            test_out = self.autoencode_1.test_conv(input_flat)
-            assert(encoding_1.size(-1) == test_out.size(-1))
-            print(input_flat.size(), encoding_1.size(), test_out.size())
+#            test_out = self.autoencode_1.test_conv(input_flat)
+#            assert(encoding_1.size(-1) == test_out.size(-1))
+#            print(input_flat.size(), encoding_1.size(), test_out.size())
 
         encoding_2 = torch.max(self.encode_2(encoding_1), dim=-1)[0]
-        # print(encoding.size())
 
         encoding_3 = self.encode_3(encoding_2, input.size())
 
-        frame_rep = self.frame_transform(
-            self.dropout(F.elu(encoding_1.permute(0, 2, 1))))
-        segment_rep = self.segment_transform(encoding_2)[:, None, :]
-        patient_rep = encoding_3[:, None, :]\
-                        .repeat(1, input.size(1), 1)\
-                        .view(-1, encoding_3.size(-1))[:, None, :]
-
+        frame_rep = self.frame_transform(F.tanh(encoding_1.permute(0, 2, 1)))
+#        segment_rep = self.segment_transform(encoding_2)[:, None, :]
+#        patient_rep = encoding_3[:, None, :]\
+#                        .repeat(1, input.size(1), 1)\
+#                        .view(-1, encoding_3.size(-1))[:, None, :]
 
         decode_rep = self.decode_transform(
             frame_rep
