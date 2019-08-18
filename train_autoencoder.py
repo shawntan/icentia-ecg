@@ -12,8 +12,9 @@ report_every = 150
 frame_length = 2**11 + 1
 def data_stream(filenames, shuffle=True):
     return data_io.stream_file_list(filenames,
-                                    buffer_count=20,
-                                    batch_size=5,
+                                    buffer_count=5,
+                                    batch_size=32,
+                                    chunk_size=1,
                                     shuffle=shuffle)
 
 
@@ -39,28 +40,31 @@ if __name__ == "__main__":
     # print("Batch count:", batch_count)
     best_loss = np.inf
     i = 0
+    input = None
     for epoch in range(epochs):
         running_loss = 0.0
+        time_step_count = 0
         for data in data_stream(train_filenames):
             # get the inputs
             input = torch.from_numpy(data.astype(np.float32)).cuda()
             # zero the parameter gradients
-
             # forward + backward + optimize
             loss = model(input)
-            # print(loss)
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(parameters, 5.)
+            torch.nn.utils.clip_grad_norm_(parameters, 2.5)
             optimizer.step()
             optimizer.zero_grad()
             # print statistics
-            running_loss += loss.data.item()
+            total_samples = input.numel()
+            running_loss += loss.detach().item() * total_samples
+            time_step_count += total_samples
 
             i += 1
             if i % report_every == 0:    # print every 500 mini-batches
                 print('[%d, %5d] loss: %.3f' %
-                      (epoch, i, running_loss / report_every))
+                      (epoch, i, running_loss / time_step_count))
                 running_loss = 0.0
+                time_step_count = 0
             if i % (report_every * 10) == 0:
                 # print()
                 # print("REPORTING")
@@ -84,4 +88,3 @@ if __name__ == "__main__":
                     else:
                         print("Valid loss:", valid_loss)
                 model.train()
-

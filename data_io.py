@@ -41,6 +41,7 @@ def buffered_random(stream, buffer_items=100, leak_percent=0.9):
 
 
 def stream_file_list(filenames, buffer_count=20, batch_size=10,
+                     chunk_size=1,
                      shuffle=True):
     filenames = filenames.copy()
     if shuffle:
@@ -50,7 +51,8 @@ def stream_file_list(filenames, buffer_count=20, batch_size=10,
     while len(streams) < buffer_count and len(filenames) > 0:
         try:
             streams.append(stream_array(load_file(filenames.pop()),
-                                        shuffle=shuffle))
+                                        shuffle=shuffle,
+                                        chunk_size=chunk_size))
         except IOError:
             pass
         except EOFError:
@@ -69,7 +71,8 @@ def stream_file_list(filenames, buffer_count=20, batch_size=10,
                 while len(filenames) > 0:
                     try:
                         stream = stream_array(load_file(filenames.pop()),
-                                              shuffle=shuffle)
+                                              shuffle=shuffle,
+                                              chunk_size=chunk_size)
                         break
                     except IOError:
                         pass
