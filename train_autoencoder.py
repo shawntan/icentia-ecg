@@ -12,7 +12,7 @@ report_every = 150
 frame_length = 2**11 + 1
 def data_stream(filenames, shuffle=True):
     return data_io.stream_file_list(filenames,
-                                    buffer_count=5,
+                                    buffer_count=20,
                                     batch_size=32,
                                     chunk_size=1,
                                     shuffle=shuffle)
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     model = Autoencoder(0, 1).cuda()
     # valid_data = torch.from_numpy(signal_data_valid).cuda()[:, None, :]
     parameters = model.parameters()
-    optimizer = optim.SGD(parameters, lr=1e-4, momentum=0.99)
+    optimizer = optim.Adam(parameters, lr=1e-3)
 
     epochs = 25
     # batch_count = signal_data_batched.shape[0] // batch_size
