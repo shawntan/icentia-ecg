@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
+import os
 
 class rand():
 
@@ -29,7 +30,8 @@ class convautoencoder():
     def __init__(self):
         import model
         # self.enc = model.Autoencoder()
-        self.enc = torch.load('model.pt', map_location='cpu')
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        self.enc = torch.load(dir_path + '/model.pt', map_location='cpu')
         self.enc.eval()
 
     def __str__(self):

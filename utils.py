@@ -4,6 +4,7 @@ import pandas as pd
 import sys,os
 import hashlib
 import pickle
+import os 
 
 def create_index(df, remove_meta=False):
     # create index col and remove source columns
@@ -34,7 +35,8 @@ def getSubset(num_samples, cache=True, seed=0,
     
     args_hash = hashlib.md5(str.encode(str(args))).hexdigest()
     args_file = hashlib.md5(str.encode(str(os.path.getsize(embeddings_file)) + str(os.path.getmtime(embeddings_file)))).hexdigest()
-    filename = ".cache/{}_{}.pkl.gz".format(args_hash, args_file)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    filename = dir_path + "/.cache/{}_{}.pkl.gz".format(args_hash, args_file)
     
     if os.path.exists(filename):
         print("Loading cache {}".format(filename))
