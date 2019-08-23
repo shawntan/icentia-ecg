@@ -4,6 +4,7 @@ import pickle
 import gzip
 from itertools import chain
 import random
+import asyncio
 
 
 def load_file(filename):
@@ -48,11 +49,16 @@ def stream_file_list(filenames, buffer_count=20, batch_size=10,
         random.shuffle(filenames)
     result = []
     streams = []
+
+
+    def make_stream():
+        return stream_array(load_file(filenames.pop()),
+                                      shuffle=shuffle,
+                                      chunk_size=chunk_size)
+
     while len(streams) < buffer_count and len(filenames) > 0:
         try:
-            streams.append(stream_array(load_file(filenames.pop()),
-                                        shuffle=shuffle,
-                                        chunk_size=chunk_size))
+            streams.append(make_stream())
         except IOError:
             pass
         except EOFError:
@@ -70,9 +76,7 @@ def stream_file_list(filenames, buffer_count=20, batch_size=10,
                 stream = None
                 while len(filenames) > 0:
                     try:
-                        stream = stream_array(load_file(filenames.pop()),
-                                              shuffle=shuffle,
-                                              chunk_size=chunk_size)
+                        stream = make_stream()
                         break
                     except IOError:
                         pass

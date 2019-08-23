@@ -18,8 +18,9 @@ def receptive_field(op_params):
 class ResidualEncoder(torch.nn.Module):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride,
-                 activation=torch.nn.ELU(), dropout=0.5):
+                 activation=torch.nn.ELU(), dropout=0.5, last=False):
         super(ResidualEncoder, self).__init__()
+        self.last = last
         self.conv_op = torch.nn.Conv1d(
             in_channels=in_channels,
             out_channels=out_channels,
@@ -38,21 +39,26 @@ class ResidualEncoder(torch.nn.Module):
             dilation=1, groups=1, bias=True
         )
 
-        self.dropout = torch.nn.Dropout(0.5)
+        self.dropout = torch.nn.Dropout(dropout)
         self.activation = activation
+        # self.bn = nn.BatchNorm1d(out_channels)
 
     def forward(self, x):
         z_ = self.conv_op(x)
         z = self.dropout(self.activation(z_))
         y_ = self.nin_op(z)
-        y = self.dropout(self.activation(y_))
-        return y + z_
+        if not self.last:
+            y = self.dropout(self.activation(y_))
+            return y + z_
+        else:
+            return y_
 
 class ResidualDecoder(torch.nn.Module):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride,
-                 activation=torch.nn.ELU(), dropout=0.5):
+                 activation=torch.nn.ELU(), dropout=0.5, last=False):
         super(ResidualDecoder, self).__init__()
+        self.last = last
         self.conv_op = torch.nn.ConvTranspose1d(
             in_channels=in_channels,
             out_channels=out_channels,
@@ -67,27 +73,36 @@ class ResidualDecoder(torch.nn.Module):
             stride=1,
             dilation=1, groups=1, bias=True
         )
-        self.dropout = torch.nn.Dropout(0.5)
+        self.dropout = torch.nn.Dropout(dropout)
         self.activation = activation
+        # self.bn = nn.BatchNorm1d(out_channels)
 
     def forward(self, x):
         z_ = self.conv_op(x)
         z = self.dropout(self.activation(z_))
         y_ = self.nonlin(z)
         # print(y_.size(), z.size())
-        y = self.dropout(self.activation(y_))
-        return y + z_
+        if not self.last:
+            y = self.dropout(self.activation(y_))
+            return y + z_
+        else:
+            return y_
 
 class ConvAutoencoder(torch.nn.Module):
-    def __init__(self, stack_spec, encoder_only=False, debug=False):
+    def __init__(self, stack_spec, debug=False):
         super(ConvAutoencoder, self).__init__()
         activation = torch.nn.ELU()
         encode_ops = []
         dropout = torch.nn.Dropout(0.5)
 
-        for in_c, out_c, kernel, stride in stack_spec:
+        for i, (in_c, out_c, kernel, stride) in enumerate(stack_spec):
+            last = i == (len(stack_spec)-1)
             encode_ops.append(ResidualEncoder(in_c, out_c, kernel, stride,
-                                              dropout=0.1))
+                                              dropout=0.25,
+                                              last=last))
+            if not last:
+                pass
+
         #    encode_ops.append(dropout)
         # encode_ops = encode_ops[:-1]
 
@@ -104,11 +119,16 @@ class ConvAutoencoder(torch.nn.Module):
                 dilation=1, groups=1, bias=True
             )
 
-        if not encoder_only:
-            decode_ops = []
-            for out_c, in_c, kernel, stride in stack_spec[::-1]:
-                decode_ops.append(ResidualDecoder(in_c, out_c, kernel, stride,
-                                                  dropout=0.1))
+        decode_ops = []
+        for i, (out_c, in_c, kernel, stride) in enumerate(stack_spec[::-1]):
+            last = (i == len(stack_spec)-1)
+            decode_ops.append(ResidualDecoder(in_c, out_c, kernel, stride,
+                                              dropout=0.25,
+                                              last=last))
+            if not last:
+                pass
+
+
             #    decode_ops.append(dropout)
             # decode_ops = decode_ops[:-1]
             self.decode = torch.nn.Sequential(*decode_ops)
@@ -118,7 +138,7 @@ class ConvAutoencoder(torch.nn.Module):
 
     def forward(self, x):
         encoding = self.encode(x)
-        output = self.decode(F.elu(encoding))
+        output = self.decode(encoding)
         return output
 
 
@@ -144,7 +164,7 @@ class Autoencoder(torch.nn.Module):
                 (256, frame_dim,   3,   2),
             ],
         )
-
+        print(self.autoencode_1)
 
         self.encode_2 = torch.nn.Sequential(
             torch.nn.Conv1d(
@@ -190,6 +210,7 @@ class Autoencoder(torch.nn.Module):
             activation,
             nn.Linear(frame_dim * 2, frame_dim),
         )
+        self.frame_bn = nn.BatchNorm1d(frame_dim)
 
     def encode_3(self, x, input_shape):
         x = x.view(input_shape[0], input_shape[1], x.size(-1))
@@ -199,36 +220,34 @@ class Autoencoder(torch.nn.Module):
         emb = self.encode_3_2(h_2)
         return emb
 
+    def encode(self, input_flat):
+        encoding_1 = self.frame_bn(self.autoencode_1.encode(input_flat))
+        return encoding_1
+
+    def decode(self, encoding):
+        output = self.autoencode_1.decode(encoding)
+        return output
 
     def forward(self, input):
         input = (input - self.mean) / self.std
         input_flat = input.view(-1, 1, input.size(-1))
 
-        encoding_1 = self.autoencode_1.encode(input_flat)
+        # encoding_2 = torch.max(self.encode_2(encoding_1), dim=-1)[0]
 
-#            test_out = self.autoencode_1.test_conv(input_flat)
-#            assert(encoding_1.size(-1) == test_out.size(-1))
-#            print(input_flat.size(), encoding_1.size(), test_out.size())
+        # encoding_3 = self.encode_3(encoding_2, input.size())
 
-        encoding_2 = torch.max(self.encode_2(encoding_1), dim=-1)[0]
+        # frame_rep = self.frame_transform(encoding_1.permute(0, 2, 1))
 
-        encoding_3 = self.encode_3(encoding_2, input.size())
-
-        frame_rep = self.frame_transform(torch.tanh(encoding_1.permute(0, 2, 1)))
-#        segment_rep = self.segment_transform(encoding_2)[:, None, :]
-#        patient_rep = encoding_3[:, None, :]\
-#                        .repeat(1, input.size(1), 1)\
-#                        .view(-1, encoding_3.size(-1))[:, None, :]
-
-        decode_rep = self.decode_transform(
-            frame_rep
+        # decode_rep = self.decode_transform(
+        #     frame_rep
             # segment_rep +
             # patient_rep
-        ).permute(0, 2, 1)
+        # ).permute(0, 2, 1)
+        output = self.decode(self.encode(input_flat))
 
-        output = self.autoencode_1.decode(decode_rep)
         output = output.view(input.size())
-        loss = torch.mean((output - input)**2)
+        # loss = torch.mean((output - input)**2)
+        loss = torch.mean(abs(output - input))
         return loss
 
 

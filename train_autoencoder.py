@@ -33,7 +33,8 @@ if __name__ == "__main__":
     model = Autoencoder(0, 1).cuda()
     # valid_data = torch.from_numpy(signal_data_valid).cuda()[:, None, :]
     parameters = model.parameters()
-    optimizer = optim.Adam(parameters, lr=1e-3)
+    # optimizer = optim.Adam(parameters, lr=1e-3)
+    optimizer = optim.SGD(parameters, lr=1e-3, momentum=0.999)
 
     epochs = 25
     # batch_count = signal_data_batched.shape[0] // batch_size
@@ -51,7 +52,7 @@ if __name__ == "__main__":
             # forward + backward + optimize
             loss = model(input)
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(parameters, 2.5)
+            torch.nn.utils.clip_grad_norm_(parameters, 5.)
             optimizer.step()
             optimizer.zero_grad()
             # print statistics
@@ -77,6 +78,7 @@ if __name__ == "__main__":
                         # get the inputs
                         input = torch.from_numpy(data.astype(np.float32)).cuda()
                         loss = model(input)
+                        # print(loss)
                         total_loss += loss.data.item()
                         count += 1
                     valid_loss = total_loss / count
