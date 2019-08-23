@@ -50,6 +50,9 @@ def getSubset(num_samples, cache=True, seed=0,
         
     return subset
     
+def getSubsetFile(filename):
+    return pickle.load(gzip.GzipFile(filename, 'rb'))
+    
 # get a subset of the data without reading every line into memory.
 def getSubsetCore(num_samples,seed,embeddings_file,labels_file):
     
