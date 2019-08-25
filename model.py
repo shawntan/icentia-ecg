@@ -18,7 +18,7 @@ def receptive_field(op_params):
 class ResidualEncoder(torch.nn.Module):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride,
-                 activation=torch.nn.ELU(), dropout=0.5, last=False):
+                 activation=torch.nn.ELU(), dropout=0.1, last=False):
         super(ResidualEncoder, self).__init__()
         self.last = last
         self.conv_op = torch.nn.Conv1d(
@@ -89,7 +89,7 @@ class ResidualDecoder(torch.nn.Module):
             return y_
 
 class ConvAutoencoder(torch.nn.Module):
-    def __init__(self, stack_spec, debug=False):
+    def __init__(self, stack_spec, debug=True):
         super(ConvAutoencoder, self).__init__()
         activation = torch.nn.ELU()
         encode_ops = []
@@ -98,7 +98,7 @@ class ConvAutoencoder(torch.nn.Module):
         for i, (in_c, out_c, kernel, stride) in enumerate(stack_spec):
             last = i == (len(stack_spec)-1)
             encode_ops.append(ResidualEncoder(in_c, out_c, kernel, stride,
-                                              dropout=0.25,
+                                              dropout=0.1,
                                               last=last))
             if not last:
                 pass
@@ -123,7 +123,7 @@ class ConvAutoencoder(torch.nn.Module):
         for i, (out_c, in_c, kernel, stride) in enumerate(stack_spec[::-1]):
             last = (i == len(stack_spec)-1)
             decode_ops.append(ResidualDecoder(in_c, out_c, kernel, stride,
-                                              dropout=0.25,
+                                              dropout=0.1,
                                               last=last))
             if not last:
                 pass
@@ -156,14 +156,20 @@ class Autoencoder(torch.nn.Module):
         patient_dim = 256
         # Output should be [batch, *, 4089]
         # (  1,  16, 2049, 256),
+#        self.autoencode_1 = ConvAutoencoder([
+#                # in, out, kernel, stride
+#                (  1, 256, 129,  64),
+#                (256, 512,   7,   4),
+#                (512, 256,   3,   2),
+#                (256, frame_dim,   3,   4),
+#            ],
+#        )
         self.autoencode_1 = ConvAutoencoder([
                 # in, out, kernel, stride
-                (  1, 256, 129,  64),
-                (256, 512,   7,   4),
-                (512, 256,   3,   2),
-                (256, frame_dim,   3,   2),
+                (  1, frame_dim, 2049,  2048),
             ],
         )
+ 
         print(self.autoencode_1)
 
         self.encode_2 = torch.nn.Sequential(

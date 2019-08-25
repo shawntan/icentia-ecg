@@ -32,6 +32,10 @@ if __name__ == "__main__":
 
     model = Autoencoder(0, 1).cuda()
     # valid_data = torch.from_numpy(signal_data_valid).cuda()[:, None, :]
+    for p in model.parameters():
+        if p.dim() > 1:
+            torch.nn.init.xavier_uniform_(p)
+
     parameters = model.parameters()
     # optimizer = optim.Adam(parameters, lr=1e-3)
     optimizer = optim.SGD(parameters, lr=1e-3, momentum=0.999)
@@ -51,6 +55,7 @@ if __name__ == "__main__":
             # zero the parameter gradients
             # forward + backward + optimize
             loss = model(input)
+            print(loss)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(parameters, 5.)
             optimizer.step()
