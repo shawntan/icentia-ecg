@@ -4,8 +4,28 @@ import pickle
 import gzip
 from itertools import chain
 import random
-import asyncio
+import threading
+import queue
 
+
+def threaded(stream, queue_size=10):
+    work_queue = queue.Queue(maxsize=queue_size)
+    end_marker = object()
+    def producer():
+        for item in stream:
+            work_queue.put(item)
+        work_queue.put(end_marker)
+
+    thread = threading.Thread(target=producer)
+    thread.daemon = True
+    thread.start()
+    # run as consumer
+    item = work_queue.get()
+    while item is not end_marker:
+        yield item
+        work_queue.task_done()
+        item = work_queue.get()
+    thread.join()
 
 def load_file(filename):
     # print(">", filename)
@@ -47,23 +67,37 @@ def stream_file_list(filenames, buffer_count=20, batch_size=10,
     filenames = filenames.copy()
     if shuffle:
         random.shuffle(filenames)
+
+    def _loaded_files():
+        for i, fname in enumerate(filenames):
+            # print("Loading", fname)
+            yield i, load_file(fname)
+    loaded_files = threaded(_loaded_files(), queue_size=20)
+
     result = []
     streams = []
 
 
+    total_files = len(filenames)
+    curr_file_idx = -1
     def make_stream():
-        return stream_array(load_file(filenames.pop()),
-                                      shuffle=shuffle,
-                                      chunk_size=chunk_size)
+        i, filedata = next(loaded_files)
+        stream = stream_array(filedata,
+                              shuffle=shuffle,
+                              chunk_size=chunk_size)
+        # print("Stream made.", i)
+        return i, stream
 
-    while len(streams) < buffer_count and len(filenames) > 0:
+    while len(streams) < buffer_count and curr_file_idx + 1 < total_files:
         try:
-            streams.append(make_stream())
+            curr_file_idx, stream = make_stream()
+            streams.append(stream)
         except IOError:
             pass
         except EOFError:
             pass
-    while len(streams) > 0 or len(filenames) > 0:
+
+    while len(streams) > 0 or curr_file_idx + 1 < total_files:
         i = 0
         while len(result) < batch_size and len(streams) > 0:
             try:
@@ -74,9 +108,9 @@ def stream_file_list(filenames, buffer_count=20, batch_size=10,
             except StopIteration:
                 # print("Need to looad new file")
                 stream = None
-                while len(filenames) > 0:
+                while curr_file_idx + 1 < total_files:
                     try:
-                        stream = make_stream()
+                        curr_file_idx, stream = make_stream()
                         break
                     except IOError:
                         pass

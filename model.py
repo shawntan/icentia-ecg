@@ -12,6 +12,7 @@ def receptive_field(op_params):
         estride = estride * stride
         if erfield % 2 == 0:
             print("EVEN", erfield)
+        print(erfield, estride)
     return erfield, estride
 
 
@@ -89,7 +90,7 @@ class ResidualDecoder(torch.nn.Module):
             return y_
 
 class ConvAutoencoder(torch.nn.Module):
-    def __init__(self, stack_spec, debug=True):
+    def __init__(self, stack_spec, debug=False):
         super(ConvAutoencoder, self).__init__()
         activation = torch.nn.ELU()
         encode_ops = []
@@ -151,26 +152,24 @@ class Autoencoder(torch.nn.Module):
         activation = torch.nn.ELU()
         self.dropout = dropout = torch.nn.Dropout(0.5)
 
-        frame_dim = 128
+        frame_dim = 256
         segment_dim = 256
         patient_dim = 256
         # Output should be [batch, *, 4089]
         # (  1,  16, 2049, 256),
-#        self.autoencode_1 = ConvAutoencoder([
-#                # in, out, kernel, stride
-#                (  1, 256, 129,  64),
-#                (256, 512,   7,   4),
-#                (512, 256,   3,   2),
-#                (256, frame_dim,   3,   4),
-#            ],
-#        )
         self.autoencode_1 = ConvAutoencoder([
                 # in, out, kernel, stride
-                (  1, frame_dim, 2049,  2048),
+                (  1, 512, 1025, 512),
+                (512, frame_dim,   3,   2),
             ],
         )
+#        self.autoencode_1 = ConvAutoencoder([
+#                # in, out, kernel, stride
+#                (  1, frame_dim, 2049,  2048),
+#            ],
+#        )
  
-        print(self.autoencode_1)
+        # print(self.autoencode_1)
 
         self.encode_2 = torch.nn.Sequential(
             torch.nn.Conv1d(
@@ -250,7 +249,6 @@ class Autoencoder(torch.nn.Module):
             # patient_rep
         # ).permute(0, 2, 1)
         output = self.decode(self.encode(input_flat))
-
         output = output.view(input.size())
         # loss = torch.mean((output - input)**2)
         loss = torch.mean(abs(output - input))
