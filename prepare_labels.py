@@ -3,7 +3,7 @@ import sys,os,random
 import pickle,gzip
 import pandas as pd
 from tqdm import tqdm
-import argparse
+import argparse,distutils.util
 import collections
 
 parser = argparse.ArgumentParser()
@@ -15,7 +15,10 @@ parser.add_argument('-num_segments', nargs='?', type=int, default=50)
 parser.add_argument('-max_idx_per_label', nargs='?', type=int, default=1)
 parser.add_argument('-start_idx', nargs='?', type=int, default=10001)
 parser.add_argument('-end_idx', nargs='?', type=int, default=12971)
+parser.add_argument('-relabel', nargs='?', type=lambda x:bool(distutils.util.strtobool(x)), default=True)
 args = parser.parse_args()
+
+print(args)
 
 def build_label_dict(segment, label_type):
     toreturn = dict()
@@ -70,12 +73,13 @@ def extract_labels(sample_id, segment_id, segment_labels, test_labels):
 
         for idx in np.unique(all_idx_toselect):
             this_btype = btype[idx]
-            if 1 == btype[idx]:
-                for i in range(idx-args.frame_length//2, idx+args.frame_length//2):
-                    if i in btype and btype[i] in [2,4]:
-                        this_btype = btype[i]
-            if btype[idx] != this_btype:
-                print("A normal was relabeled as {}".format(this_btype))
+            if args.relabel:
+                if 1 == btype[idx]:
+                    for i in range(idx-args.frame_length//2, idx+args.frame_length//2):
+                        if i in btype and btype[i] in [2,4]:
+                            this_btype = btype[i]
+                if btype[idx] != this_btype:
+                    print("A normal was relabeled as {}".format(this_btype))
             
             test_label = [sample_id, segment_id, idx, this_btype, rtype[idx]]
             test_labels.append(test_label)
