@@ -66,7 +66,15 @@ def extract_labels(sample_id, segment_id, segment_labels, test_labels):
             all_idx_toselect += list(idx_toselect)
 
         for idx in np.unique(all_idx_toselect):
-            test_label = [sample_id, segment_id, idx, btype[idx], rtype[idx]]
+            this_btype = btype[idx]
+            if 1 == btype[idx]:
+                for i in range(idx-args.frame_length//2, idx+args.frame_length//2):
+                    if i in btype and btype[i] in [2,4]:
+                        this_btype = btype[i]
+            if btype[idx] != this_btype:
+                print("A normal was relabeled as {}".format(this_btype))
+            
+            test_label = [sample_id, segment_id, idx, this_btype, rtype[idx]]
             test_labels.append(test_label)
 
 test_labels = []
