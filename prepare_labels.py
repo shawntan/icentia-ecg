@@ -1,6 +1,6 @@
 import numpy as np
-import sys,os
-import pickle, gzip
+import sys,os,random
+import pickle,gzip
 import pandas as pd
 from tqdm import tqdm
 import argparse
@@ -26,6 +26,9 @@ def build_label_dict(segment, label_type):
 
 def extract_labels(sample_id, segment_id, segment_labels, test_labels):
     
+        np.random.seed(0)
+        random.seed(0)
+        
         btype = build_label_dict(segment_labels, "btype")
         rtype = build_label_dict(segment_labels, "rtype")
         
