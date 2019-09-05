@@ -5,7 +5,7 @@ import os
 
 class rand():
 
-    def __init__(self):
+    def __init__(self, data=None):
         pass
     
     def __str__(self):
@@ -16,7 +16,7 @@ class rand():
 
 class none():
 
-    def __init__(self):
+    def __init__(self, data=None):
         pass
     
     def __str__(self):
@@ -27,7 +27,7 @@ class none():
 
 class convautoencoder():
 
-    def __init__(self):
+    def __init__(self, data=None):
         import model
         #self.enc = model.Autoencoder()
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -67,7 +67,7 @@ class pca():
 
 class fft():
     
-    def __init__(self):
+    def __init__(self, data=None):
         pass
     
     def __str__(self):
@@ -81,7 +81,7 @@ class fft():
     
 class periodogram():
     # https://docs.scipy.org/doc/scipy-0.13.0/reference/generated/scipy.signal.periodogram.html
-    def __init__(self):
+    def __init__(self, data=None):
         pass
     
     def __str__(self):
@@ -98,7 +98,7 @@ class biosppy_mean_beat():
     # https://biosppy.readthedocs.io/en/stable/biosppy.html
     # Carreiras, Carlos, et al. BioSPPy: Biosignal Processing in {Python}. 2015, https://github.com/PIA-Group/BioSPPy/.
     
-    def __init__(self, sampling_rate=100.):
+    def __init__(self, data=None, sampling_rate=100.):
         self.sampling_rate=sampling_rate
     
     def __str__(self):
