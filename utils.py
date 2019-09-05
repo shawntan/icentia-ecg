@@ -6,6 +6,9 @@ import hashlib
 import pickle
 import os 
 
+import os 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
 def create_index(df, remove_meta=False):
     # create index col and remove source columns
     df["id"] = df.apply(lambda row: str(int(row["sample"])) + "_" + str(int(row["segment"])) + "_" + str(int(row["frame"])), axis=1)
@@ -24,8 +27,8 @@ def lines_in_file(embeddings_file):
 
 # does some caching
 def getSubset(num_samples, cache=True, seed=0, 
-              embeddings_file="test_emb.csv.gz", 
-              labels_file="test_labels.csv.gz"):
+              embeddings_file=os.path.join(dir_path,"test_emb.csv.gz"), 
+              labels_file=os.path.join(dir_path,"test_labels.csv.gz")):
     args = locals()
     
     if not args.pop("cache", None): # pop and remove from dict
@@ -35,7 +38,6 @@ def getSubset(num_samples, cache=True, seed=0,
     
     args_hash = hashlib.md5(str.encode(str(args))).hexdigest()
     args_file = hashlib.md5(str.encode(str(os.path.getsize(embeddings_file)) + str(os.path.getmtime(embeddings_file)))).hexdigest()
-    dir_path = os.path.dirname(os.path.realpath(__file__))
     filename = dir_path + "/.cache/{}_{}.pkl.gz".format(args_hash, args_file)
     
     if os.path.exists(filename):

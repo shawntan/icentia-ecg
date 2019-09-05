@@ -6,7 +6,8 @@ Working on Icentia ECG data.
 To prepare raw embeddings file:
 
 ```
-./prepare_emb.py /path/to/icentia12k/
+./prepare_labels.py -labels_file test_labels_v2.csv.gz /path/to/icentia12k/
+./prepare_emb.py -labels_file test_labels_v2.csv.gz -embeddings_file test_emb_v2.csv.gz /path/to/icentia12k/
 ```
 
 To run evalations:
