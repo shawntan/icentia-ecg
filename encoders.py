@@ -9,7 +9,7 @@ class rand():
         pass
     
     def __str__(self):
-         return str(self.__class__)
+         return "Random"
     
     def encode(self, x):
         return np.random.rand(2)
@@ -20,7 +20,7 @@ class none():
         pass
     
     def __str__(self):
-         return str(self.__class__)
+         return "Raw"
     
     def encode(self, x):
         return x
@@ -29,17 +29,17 @@ class convautoencoder():
 
     def __init__(self):
         import model
-        # self.enc = model.Autoencoder()
+        #self.enc = model.Autoencoder()
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self.enc = torch.load(dir_path + '/model.pt', map_location='cpu')
         self.enc.eval()
 
     def __str__(self):
-         return str(self.__class__)
+         return "ConvAE"
 
     def encode(self, x):
         import torch
-        x = torch.from_numpy(x)
+        x = torch.from_numpy(x).float()
         emb = self.enc.encode(x[None, None, :])[0, :, 0].detach().numpy()
         return emb
 
@@ -59,7 +59,7 @@ class pca():
         self.pca.fit(data)
         
     def __str__(self):
-         return str(self.__class__) + " " + str({"pca_dim":self.pca_dim})
+         return "PCA (dim:{})".format(self.pca_dim)
     
     def encode(self, x):
         return self.pca.transform([x])[0]
@@ -71,13 +71,26 @@ class fft():
         pass
     
     def __str__(self):
-         return str(self.__class__)
+         return "FFT"
     
     def encode(self, x):
         import scipy.fftpack
         N = len(x)
         yf = scipy.fftpack.fft(x)
         return np.abs(yf[:N//2])
+    
+class periodogram():
+    # https://docs.scipy.org/doc/scipy-0.13.0/reference/generated/scipy.signal.periodogram.html
+    def __init__(self):
+        pass
+    
+    def __str__(self):
+         return "Periodogram"
+    
+    def encode(self, x):
+        from scipy import signal
+        f, Pxx_den = signal.periodogram(x)
+        return Pxx_den
 
 
 class biosppy_mean_beat():
@@ -89,7 +102,7 @@ class biosppy_mean_beat():
         self.sampling_rate=sampling_rate
     
     def __str__(self):
-         return str(self.__class__) + " " + str({"sampling_rate":self.sampling_rate})
+         return "BioSPPy (sample_rate:{})".format(self.sampling_rate)
     
     def encode(self, x):
         from biosppy.signals import ecg
