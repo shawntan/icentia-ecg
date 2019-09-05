@@ -13,19 +13,14 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('embeddings_file', help='File with embeddings')
-parser.add_argument('num_examples', nargs='?', type=int, default=20000, help='')
-parser.add_argument('num_trials', nargs='?', type=int, default=10, help='')
-parser.add_argument('labels_file', nargs='?', default="test_labels.csv.gz", help='')
+parser.add_argument('-num_examples', nargs='?', type=int, default=20000, help='')
+parser.add_argument('-num_trials', nargs='?', type=int, default=10, help='')
+parser.add_argument('-labels_file', nargs='?', default="test_labels.csv.gz", help='')
 parser.add_argument('-model', type=str, default="knn", choices=["knn", "lr"],help='Model to evaluate embeddings with.')
 parser.add_argument('-encode_method', type=str, default=None, choices=[o for o in dir(encoders) if not o.startswith("_")], help='to encode the signals on the fly')
 args = parser.parse_args()
 
 print(args)
-
-enc = None
-if args.encode_method != None:
-    enc = getattr(encoders, args.encode_method)()
-    print("Encoder:",enc)
 
 ## get counts
 lines_emb = 0
@@ -52,7 +47,10 @@ def evaluate(num_examples, num_trials, label_type):
         
         print("Generating subset", i)
         
-        data, labels = utils.getSubset(num_examples, embeddings_file=args.embeddings_file, seed=i)
+        data, labels = utils.getSubset(num_examples, 
+                                       embeddings_file=args.embeddings_file, 
+                                       labels_file=args.labels_file, 
+                                       seed=i)
         
         # remove class 0 from btype
         data = data[labels["btype"] != 0]
@@ -70,7 +68,10 @@ def evaluate(num_examples, num_trials, label_type):
         data = data[labels["rtype"] != 2]
         labels = labels[labels["rtype"] != 2]
         
-        if enc:
+        if args.encode_method != None:
+            
+            enc = getattr(encoders, args.encode_method)(data.values)
+            print("Encoder:",enc)
             newdata = []
             for emb in tqdm(data.values):
                 newdata.append(enc.encode(emb))
