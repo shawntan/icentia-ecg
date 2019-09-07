@@ -54,6 +54,9 @@ class convautoencoder():
 class convautoencoder_random(convautoencoder):
     def __init__(self, model_name=None, data=None):
         convautoencoder.__init__(self, model_name=None)
+        
+    def __str__(self):
+         return "ConvAE (Random init)"
     
 
 class pca():
