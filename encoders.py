@@ -27,11 +27,13 @@ class none():
 
 class convautoencoder():
 
-    def __init__(self, data=None):
-        import model
-        #self.enc = model.Autoencoder()
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.enc = torch.load(dir_path + '/model.pt', map_location='cpu')
+    def __init__(self, model_name="model.pt", data=None):
+        if model_name is None:
+            import model
+            self.enc = model.Autoencoder()
+        else:
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            self.enc = torch.load(os.path.join(dir_path,model_name), map_location='cpu')
         self.enc.eval()
 
     def __str__(self):
@@ -49,6 +51,10 @@ class convautoencoder():
         emb = self.enc.decode(x[None,:,None]).detach().numpy()
         return emb
 
+class convautoencoder_random(convautoencoder):
+    def __init__(self, model_name=None, data=None):
+        convautoencoder.__init__(self, model_name=None)
+    
 
 class pca():
     
