@@ -23,21 +23,21 @@ args = parser.parse_args()
 print(args)
 
 ## get counts
-lines_emb = 0
-with gzip.open(args.embeddings_file, 'rb') as f:
-    for line in f:
-        lines_emb += 1
+#lines_emb = 0
+#with gzip.open(args.embeddings_file, 'rb') as f:
+#    for line in f:
+#        lines_emb += 1
 
-lines_labels = 0
-with gzip.open(args.labels_file, 'rb') as f:
-    for line in f:
-        lines_labels += 1
+# lines_labels = 0
+# with gzip.open(args.labels_file, 'rb') as f:
+#     for line in f:
+#         lines_labels += 1
 
-print("lines_emb:", lines_emb)
+# print("lines_emb:", lines_emb)
 
-if lines_labels != lines_emb:
-    print(" !! Issue with coverage of labels. The data must align to the labels.")
-    sys.exit()
+# if lines_labels != lines_emb:
+#     print(" !! Issue with coverage of labels. The data must align to the labels.")
+#     sys.exit()
 
 
 def evaluate(num_examples, num_trials, label_type):
@@ -70,7 +70,7 @@ def evaluate(num_examples, num_trials, label_type):
         
         if args.encode_method != None:
             
-            enc = getattr(encoders, args.encode_method)(data.values)
+            enc = getattr(encoders, args.encode_method)(data=data.values)
             print("Encoder:",enc)
             newdata = []
             for emb in tqdm(data.values):
