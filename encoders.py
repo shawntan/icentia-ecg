@@ -2,6 +2,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import os
+import pickle
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class rand():
 
@@ -32,7 +34,6 @@ class convautoencoder():
             import model
             self.enc = model.Autoencoder()
         else:
-            dir_path = os.path.dirname(os.path.realpath(__file__))
             self.enc = torch.load(os.path.join(dir_path,model_name), map_location='cpu')
         self.enc.eval()
 
@@ -61,11 +62,17 @@ class convautoencoder_random(convautoencoder):
 
 class pca():
     
-    def __init__(self, data, pca_dim=100):
+    def __init__(self, data=None, pca_dim=100, pca_path="pca.pkl.gz"):
         from sklearn.decomposition import PCA
         self.pca_dim = pca_dim
         self.pca = PCA(n_components=pca_dim)
-        self.pca.fit(data)
+        
+        # load precomputed components from training data
+        mean,components = pickle.load(open(os.path.join(dir_path,pca_path),"rb"))
+        if len(components) < self.pca_dim:
+            raise Exception("File only has {} components".format(len(components)))
+        self.pca.components_ = components[:self.pca_dim]
+        self.pca.mean_ = mean
         
     def __str__(self):
          return "PCA (dim:{})".format(self.pca_dim)
@@ -73,6 +80,13 @@ class pca():
     def encode(self, x):
         return self.pca.transform([x])[0]
 
+class pca_10(pca):
+    def __init__(self):
+        pca.__init__(self, pca_dim=10)
+
+class pca_50(pca):
+    def __init__(self):
+        pca.__init__(self, pca_dim=50)
 
 class fft():
     
