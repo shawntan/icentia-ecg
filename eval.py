@@ -4,7 +4,7 @@ import matplotlib.pylab as plt
 import sys
 import pandas as pd
 import sklearn, sklearn.model_selection, sklearn.neighbors
-import sklearn.linear_model
+import sklearn.linear_model, sklearn.ensemble
 import gzip
 import utils
 import encoders
@@ -70,7 +70,7 @@ def evaluate(num_examples, num_trials, label_type):
         
         if args.encode_method != None:
             
-            enc = getattr(encoders, args.encode_method)(data=data.values)
+            enc = getattr(encoders, args.encode_method)()
             print("Encoder:",enc)
             newdata = []
             for emb in tqdm(data.values):
