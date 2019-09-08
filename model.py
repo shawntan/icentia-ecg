@@ -42,10 +42,10 @@ class ResidualEncoder(torch.nn.Module):
 
         self.dropout = torch.nn.Dropout(dropout)
         self.activation = activation
-        # self.bn = nn.BatchNorm1d(out_channels)
+        self.bn = nn.BatchNorm1d(out_channels)
 
     def forward(self, x):
-        z_ = self.conv_op(x)
+        z_ = self.bn(self.conv_op(x))
         z = self.dropout(self.activation(z_))
         y_ = self.nin_op(z)
         if not self.last:
@@ -76,10 +76,10 @@ class ResidualDecoder(torch.nn.Module):
         )
         self.dropout = torch.nn.Dropout(dropout)
         self.activation = activation
-        # self.bn = nn.BatchNorm1d(out_channels)
+        self.bn = nn.BatchNorm1d(out_channels)
 
     def forward(self, x):
-        z_ = self.conv_op(x)
+        z_ = self.bn(self.conv_op(x))
         z = self.dropout(self.activation(z_))
         y_ = self.nonlin(z)
         # print(y_.size(), z.size())
@@ -90,7 +90,7 @@ class ResidualDecoder(torch.nn.Module):
             return y_
 
 class ConvAutoencoder(torch.nn.Module):
-    def __init__(self, stack_spec, debug=False):
+    def __init__(self, stack_spec, debug=True):
         super(ConvAutoencoder, self).__init__()
         activation = torch.nn.ELU()
         encode_ops = []
@@ -157,17 +157,17 @@ class Autoencoder(torch.nn.Module):
         patient_dim = 256
         # Output should be [batch, *, 4089]
         # (  1,  16, 2049, 256),
-        self.autoencode_1 = ConvAutoencoder([
-                # in, out, kernel, stride
-                (  1, 512, 1025, 512),
-                (512, frame_dim,   3,   2),
-            ],
-        )
 #        self.autoencode_1 = ConvAutoencoder([
 #                # in, out, kernel, stride
-#                (  1, frame_dim, 2049,  2048),
+#                (  1, 512, 1025, 512),
+#                (512, frame_dim,   3,   4),
 #            ],
 #        )
+        self.autoencode_1 = ConvAutoencoder([
+                # in, out, kernel, stride
+                (  1, frame_dim, 2049,  2048),
+            ],
+        )
  
         # print(self.autoencode_1)
 

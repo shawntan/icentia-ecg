@@ -8,13 +8,13 @@ from model import Autoencoder
 import data_io
 import sys
 
-report_every = 150
+report_every = 100
 frame_length = 2**11 + 1
-def data_stream(filenames, shuffle=True):
+def data_stream(filenames, shuffle=True, batch_size=16):
     stream = data_io.stream_file_list(
         filenames,
         buffer_count=20,
-        batch_size=32,
+        batch_size=batch_size,
         chunk_size=1,
         shuffle=shuffle
     )
@@ -34,14 +34,16 @@ if __name__ == "__main__":
     valid_filenames = filenames[train_count:]
 
 
-    model = Autoencoder(0, 1).cuda()
+    model = Autoencoder(0, 1)
+    # model = torch.load('model.pt')
+    model = model.cuda()
     # valid_data = torch.from_numpy(signal_data_valid).cuda()[:, None, :]
     for p in model.parameters():
         if p.dim() > 1:
             torch.nn.init.xavier_uniform_(p)
 
     parameters = model.parameters()
-    optimizer = optim.Adam(parameters, lr=3e-4)
+    optimizer = optim.Adam(parameters, lr=1e-4) # , weight_decay=1e-6)
     # optimizer = optim.SGD(parameters, lr=0.05, momentum=0.999)
 
     epochs = 25
@@ -59,6 +61,7 @@ if __name__ == "__main__":
             # zero the parameter gradients
             # forward + backward + optimize
             loss = model(input)
+            # print(loss)
             loss.backward()
             # torch.nn.utils.clip_grad_norm_(parameters, 10.)
             optimizer.step()
@@ -82,17 +85,18 @@ if __name__ == "__main__":
                 with torch.no_grad():
                     total_loss = 0.
                     count = 0
-                    for data in data_stream(valid_filenames, shuffle=False):
+                    for data in data_stream(valid_filenames, shuffle=False,
+                                            batch_size=16):
                         # get the inputs
                         input = torch.from_numpy(data.astype(np.float32)).cuda()
                         loss = model(input)
-                        print(loss)
+                        # print(loss)
                         total_loss += loss.data.item()
                         count += 1
                     valid_loss = total_loss / count
                     if valid_loss < best_loss:
                         print("Best valid loss:", valid_loss)
-                        with open('model_adam.pt', 'wb') as f:
+                        with open('model.pt', 'wb') as f:
                             torch.save(model, f)
                         best_loss = valid_loss
                     else:
