@@ -22,9 +22,10 @@ class ResidualEncoder(torch.nn.Module):
                  activation=torch.nn.ELU(), dropout=0.1, last=False):
         super(ResidualEncoder, self).__init__()
         self.last = last
+
         self.conv_op = torch.nn.Conv1d(
             in_channels=in_channels,
-            out_channels=out_channels,
+            out_channels=2 * out_channels,
             kernel_size=kernel_size,
             stride=stride,
             padding=0,
@@ -32,7 +33,15 @@ class ResidualEncoder(torch.nn.Module):
         )
 
         self.nin_op = torch.nn.Conv1d(
-            in_channels=out_channels,
+            in_channels=2 * out_channels,
+            out_channels=out_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+            dilation=1, groups=1, bias=True
+        )
+        self.res_op = torch.nn.Conv1d(
+            in_channels=2 * out_channels,
             out_channels=out_channels,
             kernel_size=1,
             stride=1,
@@ -42,7 +51,7 @@ class ResidualEncoder(torch.nn.Module):
 
         self.dropout = torch.nn.Dropout(dropout)
         self.activation = activation
-        self.bn = nn.BatchNorm1d(out_channels)
+        self.bn = nn.BatchNorm1d(2 * out_channels)
 
     def forward(self, x):
         z_ = self.bn(self.conv_op(x))
@@ -50,7 +59,7 @@ class ResidualEncoder(torch.nn.Module):
         y_ = self.nin_op(z)
         if not self.last:
             y = self.dropout(self.activation(y_))
-            return y + z_
+            return y + self.res_op(z_)
         else:
             return y_
 
@@ -62,21 +71,29 @@ class ResidualDecoder(torch.nn.Module):
         self.last = last
         self.conv_op = torch.nn.ConvTranspose1d(
             in_channels=in_channels,
-            out_channels=out_channels,
+            out_channels=out_channels * 2,
             kernel_size=kernel_size,
             stride=stride,
             dilation=1, groups=1, bias=True
         )
         self.nonlin = torch.nn.Conv1d(
-            in_channels=out_channels,
+            in_channels=out_channels * 2,
             out_channels=out_channels,
             kernel_size=1,
             stride=1,
             dilation=1, groups=1, bias=True
         )
+        self.res_op = torch.nn.Conv1d(
+            in_channels=out_channels * 2,
+            out_channels=out_channels,
+            kernel_size=1,
+            stride=1,
+            dilation=1, groups=1, bias=True
+        )
+
         self.dropout = torch.nn.Dropout(dropout)
         self.activation = activation
-        self.bn = nn.BatchNorm1d(out_channels)
+        self.bn = nn.BatchNorm1d(2 * out_channels)
 
     def forward(self, x):
         z_ = self.bn(self.conv_op(x))
@@ -85,7 +102,7 @@ class ResidualDecoder(torch.nn.Module):
         # print(y_.size(), z.size())
         if not self.last:
             y = self.dropout(self.activation(y_))
-            return y + z_
+            return y + self.res_op(z_)
         else:
             return y_
 
@@ -152,7 +169,7 @@ class Autoencoder(torch.nn.Module):
         activation = torch.nn.ELU()
         self.dropout = dropout = torch.nn.Dropout(0.5)
 
-        frame_dim = 256
+        frame_dim = 100
         segment_dim = 256
         patient_dim = 256
         # Output should be [batch, *, 4089]
