@@ -267,8 +267,8 @@ class Autoencoder(torch.nn.Module):
         # ).permute(0, 2, 1)
         output = self.decode(self.encode(input_flat))
         output = output.view(input.size())
-        # loss = torch.mean((output - input)**2)
-        loss = torch.mean(abs(output - input))
+        loss = torch.sqrt(torch.mean((output - input)**2))
+        # loss = torch.mean(abs(output - input))
         return loss
 
 

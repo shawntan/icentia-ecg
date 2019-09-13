@@ -35,16 +35,21 @@ if __name__ == "__main__":
 
 
     model = Autoencoder(0, 1)
-    # model = torch.load('model.pt')
-    model = model.cuda()
     # valid_data = torch.from_numpy(signal_data_valid).cuda()[:, None, :]
     for p in model.parameters():
         if p.dim() > 1:
             torch.nn.init.xavier_uniform_(p)
+    # model = torch.load('model.pt')
+    model = model.cuda()
 
     parameters = model.parameters()
-    optimizer = optim.Adam(parameters, lr=1e-4) # , weight_decay=1e-6)
+    optimizer = optim.Adam(parameters, lr=1.) # , weight_decay=1e-6)
     # optimizer = optim.SGD(parameters, lr=0.05, momentum=0.999)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min',
+        factor=0.5, patience=10, verbose=True, threshold=0.0001,
+        threshold_mode='rel', cooldown=0, min_lr=1e-6, eps=1e-08
+    )
 
     epochs = 25
     # batch_count = signal_data_batched.shape[0] // batch_size
@@ -62,10 +67,11 @@ if __name__ == "__main__":
             # forward + backward + optimize
             loss = model(input)
             # print(loss)
-            loss.backward()
-            # torch.nn.utils.clip_grad_norm_(parameters, 10.)
-            optimizer.step()
-            optimizer.zero_grad()
+            if i % 4 == 0:
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(parameters, 10.)
+                optimizer.step()
+                optimizer.zero_grad()
             # print statistics
             total_samples = input.numel()
             running_loss += loss.detach().item() * total_samples
@@ -101,4 +107,6 @@ if __name__ == "__main__":
                         best_loss = valid_loss
                     else:
                         print("Valid loss:", valid_loss)
+
+                scheduler.step(valid_loss)
                 model.train()
