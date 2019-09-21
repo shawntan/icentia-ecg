@@ -97,8 +97,8 @@ def evaluate(num_examples, num_trials, label_type):
             num_labels = len(set(y))
             input_size = len(X[0])
             layers = [input_size, int(input_size/1.5), int(input_size/1.5), int(input_size/2), int(input_size/2)]
-            network = MLP(input_size, layers, num_labels, dropout_rate =drop_rate )
-            model = MLP_train(network, lr = Lr)
+            network = MLP(input_size, layers, num_labels, dropout_rate =0.2 )
+            model = MLP_train(network, lr = 0.001)
         else:
             print("Unknown model")
             sys.exit();
