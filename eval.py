@@ -10,6 +10,7 @@ import utils
 import encoders
 import collections
 from tqdm import tqdm
+from mlp import MLP_train, MLP
 
 parser = argparse.ArgumentParser()
 parser.add_argument('embeddings_file', help='File with embeddings')
