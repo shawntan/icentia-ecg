@@ -92,6 +92,12 @@ def evaluate(num_examples, num_trials, label_type):
             model = sklearn.linear_model.LogisticRegression(multi_class="auto")
         elif args.model == "adaboost":
             model = sklearn.ensemble.AdaBoostClassifier()
+        elif args.model == "mlp":
+            num_labels = len(set(y))
+            input_size = len(X[0])
+            layers = [input_size, int(input_size/1.5), int(input_size/1.5), int(input_size/2), int(input_size/2)]
+            network = MLP(input_size, layers, num_labels, dropout_rate =drop_rate )
+            model = MLP_train(network, lr = Lr)
         else:
             print("Unknown model")
             sys.exit();
