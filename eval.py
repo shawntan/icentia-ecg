@@ -16,7 +16,7 @@ parser.add_argument('embeddings_file', help='File with embeddings')
 parser.add_argument('-num_examples', nargs='?', type=int, default=20000, help='')
 parser.add_argument('-num_trials', nargs='?', type=int, default=10, help='')
 parser.add_argument('-labels_file', nargs='?', default="test_labels.csv.gz", help='')
-parser.add_argument('-model', type=str, default="knn", choices=["knn","lr","adaboost"],help='Model to evaluate embeddings with.')
+parser.add_argument('-model', type=str, default="knn", choices=["knn","mlp","lr","adaboost"],help='Model to evaluate embeddings with.')
 parser.add_argument('-encode_method', type=str, default=None, choices=[o for o in dir(encoders) if not o.startswith("_")], help='to encode the signals on the fly')
 args = parser.parse_args()
 
