@@ -22,10 +22,11 @@ class ResidualEncoder(torch.nn.Module):
                  activation=torch.nn.ELU(), dropout=0.1, last=False):
         super(ResidualEncoder, self).__init__()
         self.last = last
+        hidden_size = 4 * out_channels
 
         self.conv_op = torch.nn.Conv1d(
             in_channels=in_channels,
-            out_channels=2 * out_channels,
+            out_channels=hidden_size,
             kernel_size=kernel_size,
             stride=stride,
             padding=0,
@@ -33,7 +34,7 @@ class ResidualEncoder(torch.nn.Module):
         )
 
         self.nin_op = torch.nn.Conv1d(
-            in_channels=2 * out_channels,
+            in_channels=hidden_size,
             out_channels=out_channels,
             kernel_size=1,
             stride=1,
@@ -41,25 +42,25 @@ class ResidualEncoder(torch.nn.Module):
             dilation=1, groups=1, bias=True
         )
         self.res_op = torch.nn.Conv1d(
-            in_channels=2 * out_channels,
+            in_channels=in_channels,
             out_channels=out_channels,
-            kernel_size=1,
-            stride=1,
+            kernel_size=kernel_size,
+            stride=stride,
             padding=0,
             dilation=1, groups=1, bias=True
         )
 
         self.dropout = torch.nn.Dropout(dropout)
         self.activation = activation
-        self.bn = nn.BatchNorm1d(2 * out_channels)
+        self.bn = nn.BatchNorm1d(hidden_size)
 
     def forward(self, x):
-        z_ = self.bn(self.conv_op(x))
-        z = self.dropout(self.activation(z_))
-        y_ = self.nin_op(z)
+        h_ = self.bn(self.conv_op(x))
+        h = self.dropout(self.activation(h_))
+        y_ = self.nin_op(h)
         if not self.last:
             y = self.dropout(self.activation(y_))
-            return y + self.res_op(z_)
+            return y + self.res_op(x)
         else:
             return y_
 
@@ -69,31 +70,33 @@ class ResidualDecoder(torch.nn.Module):
                  activation=torch.nn.ELU(), dropout=0.5, last=False):
         super(ResidualDecoder, self).__init__()
         self.last = last
+        hidden_size = 4 * out_channels
+
         self.conv_op = torch.nn.ConvTranspose1d(
             in_channels=in_channels,
-            out_channels=out_channels * 2,
+            out_channels=hidden_size,
             kernel_size=kernel_size,
             stride=stride,
             dilation=1, groups=1, bias=True
         )
         self.nonlin = torch.nn.Conv1d(
-            in_channels=out_channels * 2,
+            in_channels=hidden_size,
             out_channels=out_channels,
             kernel_size=1,
             stride=1,
             dilation=1, groups=1, bias=True
         )
-        self.res_op = torch.nn.Conv1d(
-            in_channels=out_channels * 2,
+        self.res_op = torch.nn.ConvTranspose1d(
+            in_channels=in_channels,
             out_channels=out_channels,
-            kernel_size=1,
-            stride=1,
+            kernel_size=kernel_size,
+            stride=stride,
             dilation=1, groups=1, bias=True
         )
 
         self.dropout = torch.nn.Dropout(dropout)
         self.activation = activation
-        self.bn = nn.BatchNorm1d(2 * out_channels)
+        self.bn = nn.BatchNorm1d(hidden_size)
 
     def forward(self, x):
         z_ = self.bn(self.conv_op(x))
@@ -101,8 +104,8 @@ class ResidualDecoder(torch.nn.Module):
         y_ = self.nonlin(z)
         # print(y_.size(), z.size())
         if not self.last:
-            y = self.dropout(self.activation(y_))
-            return y + self.res_op(z_)
+            y = self.activation(y_)
+            return y + self.res_op(x)
         else:
             return y_
 
@@ -111,7 +114,6 @@ class ConvAutoencoder(torch.nn.Module):
         super(ConvAutoencoder, self).__init__()
         activation = torch.nn.ELU()
         encode_ops = []
-        dropout = torch.nn.Dropout(0.5)
 
         for i, (in_c, out_c, kernel, stride) in enumerate(stack_spec):
             last = i == (len(stack_spec)-1)
@@ -121,10 +123,10 @@ class ConvAutoencoder(torch.nn.Module):
             if not last:
                 pass
 
-        #    encode_ops.append(dropout)
-        # encode_ops = encode_ops[:-1]
+        self.bottleneck_dim = out_c
 
-        self.encode = torch.nn.Sequential(*encode_ops)
+
+        self._encode = torch.nn.Sequential(*encode_ops)
         erfield, estride = receptive_field(stack_spec)
         if debug:
             print("Effective receptive field:", erfield, estride)
@@ -136,6 +138,7 @@ class ConvAutoencoder(torch.nn.Module):
                 padding=0,
                 dilation=1, groups=1, bias=True
             )
+        self.debug = True
 
         decode_ops = []
         for i, (out_c, in_c, kernel, stride) in enumerate(stack_spec[::-1]):
@@ -151,12 +154,39 @@ class ConvAutoencoder(torch.nn.Module):
             # decode_ops = decode_ops[:-1]
             self.decode = torch.nn.Sequential(*decode_ops)
         self.activation = activation
-        self.dropout = dropout
+        # self.dropout = dropout
         self.debug = debug
+
+        self.res_enc = torch.nn.Conv1d(
+            in_channels=1,
+            out_channels=self.bottleneck_dim,
+            kernel_size=erfield,
+            stride=estride,
+            padding=0,
+            dilation=1, groups=1, bias=True
+        )
+
+        self.res_dec = torch.nn.ConvTranspose1d(
+            in_channels=self.bottleneck_dim,
+            out_channels=1,
+            kernel_size=erfield,
+            stride=estride,
+            dilation=1, groups=1, bias=True
+        )
+
+
+    def encode(self, x):
+        encoding = self._encode(x)
+        if self.debug:
+            test_out = self.test_conv(x)
+            print("Checking receptive fields", encoding.size(), test_out.size())
+            assert(test_out.size(-1) == encoding.size(-1))
+            self.debug = False
+        return encoding + self.res_enc(x)
 
     def forward(self, x):
         encoding = self.encode(x)
-        output = self.decode(encoding)
+        output = self.decode(encoding) + self.res_dec(encoding)
         return output
 
 
@@ -174,64 +204,16 @@ class Autoencoder(torch.nn.Module):
         patient_dim = 256
         # Output should be [batch, *, 4089]
         # (  1,  16, 2049, 256),
-#        self.autoencode_1 = ConvAutoencoder([
-#                # in, out, kernel, stride
-#                (  1, 512, 1025, 512),
-#                (512, frame_dim,   3,   4),
-#            ],
-#        )
         self.autoencode_1 = ConvAutoencoder([
                 # in, out, kernel, stride
-                (  1, frame_dim, 2049,  2048),
+                (  1, 64,  257,  32),
+                ( 64, 128,    9,   2),
+                (128, frame_dim,  25,  32),
+                # (512, frame_dim,   3,   4),
             ],
         )
- 
-        # print(self.autoencode_1)
-
-        self.encode_2 = torch.nn.Sequential(
-            torch.nn.Conv1d(
-                frame_dim, 128, 5, 2,
-                padding=0, dilation=1, groups=1, bias=True
-            ),
-            activation,
-            torch.nn.MaxPool1d(3),
-            dropout,
-            torch.nn.Conv1d(
-                128, 128, 5, 2,
-                padding=0, dilation=1, groups=1, bias=True
-            ),
-            activation,
-            torch.nn.MaxPool1d(3),
-            dropout,
-            torch.nn.Conv1d(
-                128, segment_dim, 3, 1,
-                padding=0, dilation=1, groups=1, bias=True
-            ),
-            activation,
-        )
-
-        self.encode_3_1 = torch.nn.Sequential(
-            nn.Linear(segment_dim, patient_dim, 1),
-            activation,
-            dropout,
-            nn.Linear(patient_dim, patient_dim, 1),
-        )
-
-        self.encode_3_2 = torch.nn.Sequential(
-            nn.Linear(patient_dim * 2, patient_dim),
-            activation,
-            dropout
-        )
-
 
         self.frame_transform = nn.Linear(frame_dim, frame_dim * 2)
-        self.segment_transform = nn.Linear(segment_dim, frame_dim * 2)
-        self.patient_transform = nn.Linear(patient_dim, frame_dim * 2)
-
-        self.decode_transform = nn.Sequential(
-            activation,
-            nn.Linear(frame_dim * 2, frame_dim),
-        )
         self.frame_bn = nn.BatchNorm1d(frame_dim)
 
     def encode_3(self, x, input_shape):

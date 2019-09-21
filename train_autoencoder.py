@@ -35,15 +35,14 @@ if __name__ == "__main__":
 
 
     model = Autoencoder(0, 1)
-    # valid_data = torch.from_numpy(signal_data_valid).cuda()[:, None, :]
     for p in model.parameters():
         if p.dim() > 1:
             torch.nn.init.xavier_uniform_(p)
-    # model = torch.load('model.pt')
+#    model = torch.load('model.pt')
     model = model.cuda()
 
     parameters = model.parameters()
-    optimizer = optim.Adam(parameters, lr=1.) # , weight_decay=1e-6)
+    optimizer = optim.Adam(parameters, lr=1e-4, weight_decay=1e-6)
     # optimizer = optim.SGD(parameters, lr=0.05, momentum=0.999)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode='min',
@@ -67,7 +66,7 @@ if __name__ == "__main__":
             # forward + backward + optimize
             loss = model(input)
             # print(loss)
-            if i % 4 == 0:
+            if i % 1 == 0:
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(parameters, 10.)
                 optimizer.step()
