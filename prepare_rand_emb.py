@@ -32,11 +32,13 @@ for index, row in test_labels.iterrows():
         filename = new_filename
         data = pickle.load(gzip.open(new_filename))
     # get frame which should be 2049 with the center at the frame index
-    frame = np.random.randint(data.shape[1] - context) + context
+    frame = np.random.randint(data.shape[1] - 2 * context) + context
     input_from = frame - context
-    input_to = frame + context +1
+    input_to = frame + context + 1
     input_seq = data[row["segment"]][input_from:input_to]
-    assert(input_seq.shape[0] == args.frame_length)
+    assert input_seq.shape[0] == args.frame_length, \
+            "Length not equal %d != %d, index %d from length %d" % (
+                    input_seq.shape[0], args.frame_length, frame, data.shape[1])
 
     # compute the embedding
     emb = np.copy(input_seq) # baseline
