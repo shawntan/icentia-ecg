@@ -50,7 +50,7 @@ class convautoencoder():
         import torch
         x = torch.from_numpy(x)
         emb = self.enc.decode(x[None,:,None]).detach().numpy()
-        return emb
+        return emb[0][0]
 
 class convautoencoder_random(convautoencoder):
     def __init__(self, model_name=None, data=None):
@@ -79,6 +79,9 @@ class pca():
     
     def encode(self, x):
         return self.pca.transform([x])[0]
+    
+    def decode(self, x):
+        return self.pca.inverse_transform([x])[0]
 
 class pca_10(pca):
     def __init__(self):
