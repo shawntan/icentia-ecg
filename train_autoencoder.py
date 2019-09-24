@@ -24,10 +24,8 @@ def data_stream(filenames, shuffle=True, batch_size=16):
 
 if __name__ == "__main__":
     directory = sys.argv[1]
-    filenames = (glob.glob(directory + "/?_batched.pkl.gz") +\
-                 glob.glob(directory + "/??_batched.pkl.gz") +\
-                 glob.glob(directory + "/???_batched.pkl.gz") +\
-                 glob.glob(directory + "/????_batched.pkl.gz"))
+    filenames = [ directory + "/%05d_batched.pkl.gz" % i
+                  for i in range(9000) ]
     # print(filenames)
     train_count = int(len(filenames) * 0.9)
     train_filenames = filenames[:train_count]

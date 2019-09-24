@@ -86,9 +86,8 @@ def extract_labels(sample_id, segment_id, segment_labels, test_labels):
 
 test_labels = []
 for sample_id in range(args.start_idx, args.end_idx): # range of text examples
-    filename = os.path.join(args.dataset_path, str(sample_id) + "_batched_lbls.pkl.gz")
+    filename = os.path.join(args.dataset_path, ("%05d" % sample_id) + "_batched_lbls.pkl.gz")
     print("{}/{} ".format(sample_id, args.end_idx) + filename)
-    
     if (not os.path.isfile(filename)):
         print("##### File missing")
         continue

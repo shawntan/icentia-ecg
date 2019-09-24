@@ -26,7 +26,7 @@ f= gzip.open(args.embeddings_file, 'wt')
 f.write("sample, segment, frame," + ",".join(map(str, range(args.frame_length))) + " \n")
 
 for index, row in test_labels.iterrows():
-    new_filename = args.data + "/" + str(row["sample"]) + "_batched.pkl.gz"
+    new_filename = args.data + "/" + ("%05d" % row["sample"]) + "_batched.pkl.gz"
     if filename != new_filename: # do fancy caching
         print(new_filename)
         filename = new_filename
