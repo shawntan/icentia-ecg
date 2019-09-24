@@ -7,6 +7,86 @@ import random
 import threading
 import queue
 
+import multiprocessing
+
+
+def multiprocess(stream, fun, queue_size=10, worker_count=5):
+    in_queue = multiprocessing.JoinableQueue(maxsize=queue_size)
+    out_queue = multiprocessing.JoinableQueue(maxsize=queue_size)
+    end_marker = object()
+    def producer():
+        for item in stream:
+            in_queue.put(item)
+        for _ in range(worker_count):
+            in_queue.put(end_marker)
+    in_thread = multiprocessing.Process(target=producer)
+    in_thread.daemon = True
+    in_thread.start()
+
+    def consumer():
+        while True:
+            item = in_queue.get()
+            in_queue.task_done()
+            if item is end_marker:
+                out_queue.put(end_marker)
+                break
+            else:
+                out_queue.put(fun(item))
+
+    workers = [multiprocessing.Process(target=consumer)
+               for _ in range(worker_count)]
+    for w in workers:
+        w.daemon = True
+        w.start()
+
+    end_count = 0
+    while end_count < worker_count:
+        item = out_queue.get()
+        out_queue.task_done()
+        if item is end_marker:
+            end_count += 1
+        else:
+            yield item
+
+
+def multithreaded(stream, fun, queue_size=10, worker_count=5):
+    in_queue = queue.Queue(maxsize=queue_size)
+    out_queue = queue.Queue(maxsize=queue_size)
+    end_marker = object()
+    def producer():
+        for item in stream:
+            in_queue.put(item)
+        for _ in range(worker_count):
+            in_queue.put(end_marker)
+    in_thread = threading.Thread(target=producer)
+    in_thread.daemon = True
+    in_thread.start()
+
+    def consumer():
+        while True:
+            item = in_queue.get()
+            in_queue.task_done()
+            if item is end_marker:
+                out_queue.put(end_marker)
+                break
+            else:
+                out_queue.put(fun(item))
+
+    workers = [threading.Thread(target=consumer) for _ in range(worker_count)]
+    for w in workers:
+        w.daemon = True
+        w.start()
+
+    end_count = 0
+    while end_count < worker_count:
+        item = out_queue.get()
+        out_queue.task_done()
+        if item is end_marker:
+            end_count += 1
+        else:
+            yield item
+
+
 
 def threaded(stream, queue_size=10):
     work_queue = queue.Queue(maxsize=queue_size)

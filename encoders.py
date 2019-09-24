@@ -55,41 +55,39 @@ class convautoencoder():
 class convautoencoder_random(convautoencoder):
     def __init__(self, model_name=None, data=None):
         convautoencoder.__init__(self, model_name=None)
-        
     def __str__(self):
          return "ConvAE (Random init)"
-    
 
 class pca():
-    
     def __init__(self, data=None, pca_dim=100, pca_path="pca.pkl.gz"):
         from sklearn.decomposition import PCA
         self.pca_dim = pca_dim
         self.pca = PCA(n_components=pca_dim)
-        
         # load precomputed components from training data
         mean,components = pickle.load(open(os.path.join(dir_path,pca_path),"rb"))
         if len(components) < self.pca_dim:
             raise Exception("File only has {} components".format(len(components)))
         self.pca.components_ = components[:self.pca_dim]
         self.pca.mean_ = mean
-        
     def __str__(self):
          return "PCA (dim:{})".format(self.pca_dim)
-    
     def encode(self, x):
         return self.pca.transform([x])[0]
-    
     def decode(self, x):
         return self.pca.inverse_transform([x])[0]
 
 class pca_10(pca):
     def __init__(self):
-        pca.__init__(self, pca_dim=10)
+        pca.__init__(self, pca_dim=10, pca_path="pca_10.pkl.gz")
 
 class pca_50(pca):
     def __init__(self):
-        pca.__init__(self, pca_dim=50)
+        pca.__init__(self, pca_dim=50, pca_path="pca_50.pkl.gz")
+
+class pca_100(pca):
+    def __init__(self):
+        pca.__init__(self, pca_dim=100, pca_path="pca_100.pkl.gz")
+
 
 class fft():
     
