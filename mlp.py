@@ -25,7 +25,7 @@ class MLP(nn.Module):
                  layers_size,
                  num_labels,
                  batchnorm= True,
-                 dropout_rate= 0.5,
+                 dropout_rate= 0.15,
                  activation = 'relu'
                  ):
         super(MLP, self).__init__()
@@ -61,7 +61,7 @@ class MLP_train():
                  epochs=10,
                  optimizer='Adam',
                  momentum= 0.9,
-                 lr = 0.0001,
+                 lr = 0.001,
                  num_labels= 3):
 
         assert optimizer in ['Adam', 'SGD']
