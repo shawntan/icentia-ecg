@@ -7,6 +7,7 @@ import glob
 from model import Autoencoder
 import data_io
 import sys
+import random
 
 report_every = 100
 frame_length = 2**11 + 1
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     model = model.cuda()
 
     parameters = model.parameters()
-    optimizer = optim.Adam(parameters, lr=1.) # , weight_decay=1e-6)
+    optimizer = optim.Adam(parameters, lr=1e-3) # , weight_decay=1e-6)
     # optimizer = optim.SGD(parameters, lr=0.05, momentum=0.999)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode='min',
@@ -49,7 +50,7 @@ if __name__ == "__main__":
         threshold_mode='rel', cooldown=0, min_lr=1e-6, eps=1e-08
     )
 
-    epochs = 25
+    epochs = 10
     # batch_count = signal_data_batched.shape[0] // batch_size
     # print("Batch count:", batch_count)
     best_loss = np.inf
@@ -89,8 +90,8 @@ if __name__ == "__main__":
                 with torch.no_grad():
                     total_loss = 0.
                     count = 0
-                    for data in data_stream(valid_filenames, shuffle=False,
-                                            batch_size=16):
+                    for data in data_stream(valid_filenames[:20], shuffle=False,
+                                            batch_size=32):
                         # get the inputs
                         input = torch.from_numpy(data.astype(np.float32)).cuda()
                         loss = model(input)
@@ -105,6 +106,6 @@ if __name__ == "__main__":
                         best_loss = valid_loss
                     else:
                         print("Valid loss:", valid_loss)
-
+                random.shuffle(valid_filenames)
                 scheduler.step(valid_loss)
                 model.train()

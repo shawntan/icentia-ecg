@@ -66,7 +66,7 @@ class MLP_train():
 
         assert optimizer in ['Adam', 'SGD']
         self.lr = lr
-        self.net= net#.cuda()
+        self.net= net
         self.epochs = epochs
         self.momentum = momentum
         self.criterion = nn.CrossEntropyLoss()
@@ -79,14 +79,12 @@ class MLP_train():
         if type(layer) == nn.Linear:
             torch.nn.init.xavier_uniform(layer.weight)
             layer.bias.data.fill_(0.01)
-        
     def label_mapping(self,labels):
         self.label_map = list( zip( set(labels), [i for i in range(len(set(labels)))]))
         return
     def label2idx(self, labels):
         d = dict(self.label_map)
         return list(map(lambda x:d[x], labels))
-        
         return 
     def idx2label(self, idx):
         return list(map(lambda x: self.label_map[x][0], idx))
@@ -106,7 +104,7 @@ class MLP_train():
         label = self.label2idx(label)
         dataset = Classification_data(x_train, label)
         data_loader = torch.utils.data.DataLoader(dataset,
-                                             batch_size=250, shuffle=True,
+                                             batch_size=64, shuffle=True,
                                              num_workers=5)
         criterion = nn.CrossEntropyLoss()
         optimize = getattr(optim,self.optimizer)(self.net.parameters(), lr=self.lr)
@@ -131,7 +129,7 @@ class MLP_train():
         correct = 0
         total = 0
         dataset = Classification_data(x_test)
-        testloader = torch.utils.data.DataLoader(dataset, batch_size =250, num_workers=5, shuffle = False)
+        testloader = torch.utils.data.DataLoader(dataset, batch_size=250, num_workers=5, shuffle = False)
         predicted_list = []
         with torch.no_grad():
             for data in testloader:
@@ -141,7 +139,5 @@ class MLP_train():
                 predicted = torch.IntTensor(self.idx2label(predicted))
                 #predicted[predicted==3] = 4
                 predicted_list.extend(predicted.numpy().tolist())
-
-
         return predicted_list
 

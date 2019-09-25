@@ -96,34 +96,23 @@ def evaluate(num_examples, num_trials, label_type):
         elif args.model == "mlp":
             num_labels = len(set(y))
             input_size = len(X[0])
-            layers = [input_size, int(input_size/1.5), int(input_size/1.5), int(input_size/2), int(input_size/2)]
-            network = MLP(input_size, layers, num_labels, dropout_rate =0.2 )
-            model = MLP_train(network, lr = 0.001)
+            # layers = [input_size, int(input_size/1.5), int(input_size/1.5), int(input_size/2), int(input_size/2)]
+            layers = [input_size, 1024, 1024, 512, 512]
+            network = MLP(input_size, layers, num_labels, dropout_rate=0.2)
+            model = MLP_train(network, lr=0.001)
         else:
             print("Unknown model")
             sys.exit();
-            
         print(model)
         model = model.fit(X, y.values.flatten())
         y_pred = model.predict(X_test)
         bacc = sklearn.metrics.balanced_accuracy_score(y_test.values.flatten(),y_pred)
         all_acc.append(bacc)
-        
         print("   Run {}".format(i) + ", label_type: {}".format(label_type) + ", Balanced Accuracy: {}".format(bacc)) 
 
     return np.asarray(all_acc).mean(), np.asarray(all_acc).std()
-    
-    
-    
 btype_mean,btype_stdev = evaluate(args.num_examples, args.num_trials, "btype")
 rtype_mean,rtype_stdev = evaluate(args.num_examples, args.num_trials, "rtype")
 
 print("btype, Balanced Accuracy:",round(btype_mean,3), "+-", round(btype_stdev,3), "num_trials:",args.num_trials, args) 
 print("rtype, Balanced Accuracy:",round(rtype_mean,3), "+-", round(rtype_stdev,3), "num_trials:",args.num_trials, args) 
-
-    
-    
-    
-    
-    
-    
