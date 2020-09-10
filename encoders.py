@@ -122,8 +122,9 @@ class biosppy_mean_beat():
     # https://biosppy.readthedocs.io/en/stable/biosppy.html
     # Carreiras, Carlos, et al. BioSPPy: Biosignal Processing in {Python}. 2015, https://github.com/PIA-Group/BioSPPy/.
     
-    def __init__(self, data=None, sampling_rate=100.):
+    def __init__(self, data=None, sampling_rate=100., default_emb_length_not_inferable=120):
         self.sampling_rate=sampling_rate
+        self.default_emb_length_not_inferable = default_emb_length_not_inferable
     
     def __str__(self):
          return "BioSPPy (sample_rate:{})".format(self.sampling_rate)
@@ -136,7 +137,11 @@ class biosppy_mean_beat():
             out = np.concatenate([out["templates"].T.mean(1), out["templates"].T.std(1)], axis=0)
         except ValueError as e:
             print(" Error:",e," Writing zeros instead.")
-            out = np.zeros(self.emb_length)
+            try:
+                out = np.zeros(self.emb_length)
+            except:
+                #some better approach should be found for this
+                out = np.zeros(self.default_emb_length_not_inferable)
         self.emb_length = len(out)
         return out
 
