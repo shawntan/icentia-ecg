@@ -23,7 +23,7 @@ def get(key):
     return False
 
 
-# Count from files
+print("Counting from files")
 iterator = itertools.product(range(0,11000), range(0,50))
 for patient_id, segment_id in tqdm(iterator, total=11000*50):
     key = f'p{patient_id:05d}_s{segment_id:02d}'
@@ -40,7 +40,7 @@ for patient_id, segment_id in tqdm(iterator, total=11000*50):
             })
 
 
-# Gather stats
+print("Gathering stats")
 all_symbols = collections.Counter()
 all_aux_notes = collections.Counter()
 files = 0
